@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">LinkVault. Give read later a home.</title>
+  <desc id="desc">Paper-colored card with a folded-page bookmark mark and a restrained serif wordmark.</desc>
+  <rect width="1200" height="630" fill="#faf7ef"/>
+  <path d="M72 72H1128M72 558H1128" stroke="#dcd5c8"/>
+  <text x="72" y="112" font-family="sans-serif" font-size="14" letter-spacing="3" fill="#6d675d">A PERSONAL READING LIBRARY</text>
+  <g transform="translate(68 185) scale(1.4)">
+    <path fill="#292820" fill-rule="evenodd" d="M36 20h40l24 24v56a8 8 0 0 1-8 8H36a8 8 0 0 1-8-8V28a8 8 0 0 1 8-8Zm14 28v42l14-9 14 9V48H50Z"/>
+    <path fill="#b0573b" d="M76 20v24h24L76 20Z"/>
+  </g>
+  <text x="248" y="296" font-family="Georgia, 'Times New Roman', serif" font-size="92" letter-spacing="-3" fill="#292820">LinkVault</text>
+  <text x="80" y="414" font-family="Georgia, 'Times New Roman', serif" font-size="48" fill="#292820">Give ‘read later’ a home.</text>
+  <text x="80" y="469" font-family="sans-serif" font-size="22" fill="#6d675d">Links from your chats. A place to pick up where you left off.</text>
+  <text x="80" y="594" font-family="sans-serif" font-size="16" fill="#6d675d">LOCAL-FIRST / MARKDOWN EXPORT / PORTABLE BACKUPS</text>
+</svg>

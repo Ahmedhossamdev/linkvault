@@ -1,0 +1,50 @@
+name: Checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [24, 26]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+        working-directory: extension
+
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install pytest
+      - run: python -m pytest -q
+        env:
+          PYTHONPATH: src
+
+  package:
+    needs: [extension, python]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python scripts/package_extension.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linkvault-chromium-testing-candidate
+          path: dist/*.zip
+          if-no-files-found: error

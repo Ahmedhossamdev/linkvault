@@ -1,0 +1,4 @@
+https://example.com/science/astronomy
+https://example.com/travel/weekend
+https://example.com/food/cooking
+https://example.com/finance/budgeting

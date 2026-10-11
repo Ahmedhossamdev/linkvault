@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="128" viewBox="0 0 480 128" role="img" aria-labelledby="title">
+  <title id="title">LinkVault</title>
+  <path fill="#292820" fill-rule="evenodd" d="M36 20h40l24 24v56a8 8 0 0 1-8 8H36a8 8 0 0 1-8-8V28a8 8 0 0 1 8-8Zm14 28v42l14-9 14 9V48H50Z"/>
+  <path fill="#b0573b" d="M76 20v24h24L76 20Z"/>
+  <text x="130" y="83" font-family="Georgia, 'Times New Roman', serif" font-size="62" letter-spacing="-2" fill="#292820">LinkVault</text>
+</svg>

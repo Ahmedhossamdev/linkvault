@@ -1,0 +1,17 @@
+[project]
+name = "linkvault"
+version = "0.1.0"
+description = "Turn messy chat threads (LinkedIn, WhatsApp Web, Telegram Web) into a topic-labeled link collection."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+[project.scripts]
+linkvault = "linkvault.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
