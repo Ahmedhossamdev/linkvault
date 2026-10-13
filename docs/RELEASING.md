@@ -62,6 +62,22 @@ Run `python scripts/package_extension.py` from the root. It creates `dist/linkva
 
 Use the [synthetic examples](../examples/README.md) when testing without private chat data. The release status and remaining checks are recorded in [RELEASE_STATUS.md](RELEASE_STATUS.md).
 
+### Publish the GitHub prerelease locally
+
+After packaging the exact asset and authenticating the GitHub CLI, preview the release command:
+
+```bash
+python scripts/publish_github_release.py --dry-run
+```
+
+Then create the prerelease and upload the ZIP:
+
+```bash
+python scripts/publish_github_release.py
+```
+
+The helper verifies that `v<manifest version>` and the ZIP both contain the current manifest version, verifies the release notes and ZIP exist, prints the SHA256, and publishes through your local `gh` login. It does not create tags, push commits, or handle credentials.
+
 - Run extension unit tests and browser fixtures where Chromium can launch.
 - Run Python tests if releasing the CLI too.
 - Update docs with actual UI and recorded browser results.
