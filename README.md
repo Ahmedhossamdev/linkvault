@@ -19,6 +19,8 @@ Start with the [installation and browser table](extension/README.md#release-stat
 
 The extension now has independent topic/site filters, reports, a first-open walkthrough, and a sun/moon theme toggle. See the [manual release checklist](docs/RELEASING.md), [privacy details](PRIVACY.md), and [contribution guide](CONTRIBUTING.md).
 
+Backup & restore groups JSON/Markdown imports with downloads. JSON preserves the full library; Markdown restores links, titles, and topics with new items To read. A confirmed Delete all links action clears saved links across chats while keeping chat metadata and preferences. Reading filters are removable, and Help is separate from the four main sections.
+
 LinkedIn prohibits scraping and automation extensions. Both live collection modes carry account risk; manual scrolling and delays do not make them ban-proof. File import does not interact with LinkedIn. Read the [risk explanation](extension/README.md#choose-a-collection-method) before live collection. LinkVault is not affiliated with LinkedIn.
 
 The [extension](extension/README.md) combines links across chats with subject/site filters, reading states, archiving, deletion with undo, file import, optional title fetching, and Markdown export. Live collection offers manual and automatic modes with account-risk warnings. Full JSON backups move your library between compatible profiles without an account. Python is not required. Use exported Markdown with your own AI tool separately if you want; there is no built-in model integration.

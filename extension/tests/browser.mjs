@@ -1,6 +1,7 @@
 // Dependency-free CDP fixture checks. No LinkedIn account or requests are used.
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
 
@@ -12,7 +13,7 @@ const shim = `
   globalThis.messages = []; globalThis.listeners = []; globalThis.saved = {};
   globalThis.chrome = {
     runtime:{onMessage:{addListener(fn){listeners.push(fn)}},async sendMessage(msg){messages.push(msg);return {ok:true}}},
-    storage:{local:{async get(){return saved},async set(data){Object.assign(saved,data)}}},
+    storage:{local:{async get(){return saved},async set(data){Object.assign(saved,structuredClone(data))}}},
     permissions:{async request(){return true}},
     tabs:{onRemoved:{addListener(){}},onUpdated:{addListener(){}},async get(){return {url:'https://www.linkedin.com/messaging/thread/test/'}},async sendMessage(){return {ok:true}},async update(){}},
     scripting:{async executeScript(){}},
@@ -74,7 +75,18 @@ try {
     return {count:document.querySelectorAll('.link-row').length,pwned:!!globalThis.pwned,status:document.getElementById('status').textContent,saved:saved.library.items.length};
   })()`);
   assert.equal(importResult.count,1);assert.equal(importResult.saved,1);assert.equal(importResult.pwned,false);
+  assert.equal(await evaluate('document.getElementById("panel-library").hidden'),false);
+  const selectedChat = await evaluate(`(() => {const chat=[...document.querySelectorAll('#chats button')].find(button=>button.textContent.startsWith('chat'));chat.click();return {shown:!document.getElementById('selected-chat-actions').hidden,name:document.getElementById('selected-chat-name').textContent}})()`);
+  assert.equal(selectedChat.shown,true);assert.match(selectedChat.name,/chat/i);
+  await evaluate(`document.querySelector('#chats button').click()`);
+  assert.equal(await evaluate('document.querySelectorAll("[role=tablist] [role=tab]").length'),4);
   assert.equal(await evaluate('document.querySelector("header .support-link").href'),'https://buymeacoffee.com/ahmedhossamdev');
+  await evaluate('document.getElementById("theme").onclick()');
+  assert.equal(await evaluate('getComputedStyle(document.getElementById("theme-moon")).display'),'none');
+  assert.notEqual(await evaluate('getComputedStyle(document.getElementById("theme-sun")).display'),'none');
+  await evaluate('document.getElementById("theme").onclick()');
+  assert.equal(await evaluate('getComputedStyle(document.getElementById("theme-sun")).display'),'none');
+  assert.notEqual(await evaluate('getComputedStyle(document.getElementById("theme-moon")).display'),'none');
   assert.equal(await evaluate("Array.from(document.links).filter(link=>link.href==='https://buymeacoffee.com/ahmedhossamdev').length"),1);
   assert.match(importResult.status,/Imported 1/);
   await evaluate(`document.getElementById('tab-library').click()`);
@@ -86,7 +98,7 @@ try {
   })()`);
   assert.equal(compact.clamp,'2');assert.ok(compact.height <= compact.lineHeight * 2 + 1);assert.ok(compact.fontSize <= 18);assert.equal(compact.url,'https://example.com/postgres');
   await evaluate(`document.querySelector('.article-title').textContent='Postgres [notes]'`);
-  await evaluate(`document.querySelector('.topic').value='my-topic';document.querySelector('.topic').dispatchEvent(new Event('change'));document.getElementById('tab-export').click();document.getElementById('markdown').click()`);
+  await evaluate(`(async()=>{document.getElementById('new-topic').value='my-topic';await document.getElementById('add-topic-form').onsubmit({preventDefault(){}});document.querySelector('.topic').value='my-topic';document.querySelector('.topic').dispatchEvent(new Event('change'));document.getElementById('tab-export').click();document.getElementById('markdown').click()})()`);
   assert.equal(await evaluate('document.getElementById("panel-export").hidden'),false);
   assert.equal(await evaluate('document.getElementById("panel-library").hidden'),true);
   const download = await evaluate('(async () => ({name:downloadName,text:await downloadBlob.text()}))()');
@@ -102,6 +114,7 @@ try {
     document.getElementById('file').files=dt.files;document.getElementById('file').dispatchEvent(new Event('change'));
     await new Promise(r=>setTimeout(r,100));document.getElementById('tab-library').click();
     const before=document.getElementById('pagination-top').getBoundingClientRect().bottom <= document.getElementById('links').getBoundingClientRect().top;
+    [...document.getElementById('pagination-top').children].find(x=>x.textContent==='Next').click();
     [...document.getElementById('pagination-top').children].find(x=>x.textContent==='3').click();
     return {before,top:document.getElementById('page-status-top').textContent,bottom:document.getElementById('page-status').textContent,current:document.querySelector('#pagination [aria-current]').textContent};
   })()`);
@@ -115,13 +128,37 @@ try {
     return {position:getComputedStyle(bar).position,top:rect.top,bottom:rect.bottom,height:innerHeight};
   })()`);
   assert.equal(sticky.position,'sticky');assert.ok(sticky.top >= -1 && sticky.top <= 1);assert.ok(sticky.bottom < sticky.height);
+  const restoreChecks = await evaluate(`(async () => {
+    document.getElementById('tab-export').click();
+    const dt=new DataTransfer();dt.items.add(new File(['# Demo reading'+String.fromCharCode(10)+'## Science'+String.fromCharCode(10)+'- [Astronomy (Read)](https://example.com/astronomy)'],'demo.md',{type:'text/markdown'}));
+    document.getElementById('restore-file').files=dt.files;await document.getElementById('restore-file').onchange();
+    const article=saved.library.items.find(item=>item.url==='https://example.com/astronomy');
+    document.getElementById('search').value='Astronomy';document.getElementById('search').dispatchEvent(new Event('input'));
+    const chip=document.querySelector('#active-filters button');chip.click();
+    return {title:article.title,state:article.state,topic:article.topic,search:document.getElementById('search').value,renameHidden:document.getElementById('chat-settings').hidden};
+  })()`);
+  assert.equal(restoreChecks.title,'Astronomy');assert.equal(restoreChecks.state,'unread');assert.equal(restoreChecks.topic,'Science');assert.equal(restoreChecks.search,'');assert.equal(restoreChecks.renameHidden,true);
+  const clearChecks = await evaluate(`(async () => {
+    document.getElementById('tab-export').click();document.querySelector('.danger-zone').open=true;
+    const backup=JSON.stringify(saved.library), count=saved.library.items.length;
+    document.getElementById('clear-all').click();
+    const opened=document.getElementById('clear-dialog').open;
+    document.getElementById('cancel-clear').click();
+    const afterCancel=saved.library.items.length;
+    document.getElementById('clear-all').click();document.getElementById('clear-confirm').value='DELETE';document.getElementById('clear-confirm').dispatchEvent(new Event('input'));
+    await document.getElementById('confirm-clear').onclick();
+    const empty=saved.library.items.length===0 && saved.library.deleted.length===0 && saved.collection===null;
+    const dt=new DataTransfer();dt.items.add(new File([backup],'restore.json',{type:'application/json'}));document.getElementById('restore-file').files=dt.files;await document.getElementById('restore-file').onchange();
+    return {opened,count,afterCancel,empty,restored:saved.library.items.length};
+  })()`);
+  assert.equal(clearChecks.opened,true);assert.equal(clearChecks.afterCancel,clearChecks.count);assert.equal(clearChecks.empty,true);assert.equal(clearChecks.restored,clearChecks.count);
   const htmlChecks = await evaluate(`(async () => {
     const {importHTML}=await import('/import.js');
     const result=importHTML('<a href="javascript:alert(1)">Bad</a><a href="https://example.xyz/x">Good</a><script>https://noise.example</script>');
     return {fallback:result.fallback,urls:result.links.map(x=>x.url)};
   })()`);
   assert.deepEqual(htmlChecks,{fallback:true,urls:['https://example.xyz/x']});
-  console.log('PASS: HTML import, isolation, compact rows, export tab, pagination, reading states, Markdown and JSON downloads.');
+  console.log('PASS: import isolation, compact rows, sticky pagination, backup/restore, Markdown import, confirmed clear-all, filters and downloads.');
 
   // A fresh fixture page uses controlled timers to exercise the collector.
   await cdp('Page.navigate',{url:'about:blank'});
@@ -151,8 +188,36 @@ try {
   await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await cdp('Page.navigate',{url:origin + '/app.html?tab=1'});
   await new Promise(resolve => setTimeout(resolve,300));
-  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true);
-  console.log('PASS: narrow dashboard layout without horizontal overflow.');
+  await evaluate('document.getElementById("walkthrough-skip").click()');
+  for (const tab of ['library','collect','export','reports','guide']) {
+    await evaluate(`document.getElementById('tab-${tab}').click()`);
+    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`Narrow ${tab} panel`);
+  }
+  console.log('PASS: all narrow dashboard panels without horizontal overflow.');
+  if (process.env.LINKVAULT_SCREENSHOTS) {
+    // Optional visual evidence contains only the synthetic fixture library.
+    const directory=process.env.LINKVAULT_SCREENSHOTS;await mkdir(directory,{recursive:true});
+    await cdp('Emulation.setDeviceMetricsOverride',{width:1280,height:1000,deviceScaleFactor:1,mobile:false});
+    await evaluate(`(async()=>{
+      document.getElementById('tab-export').click();
+      const lines=['# Demo friends','## System design','- [Fair queues and the noisy-neighbor problem](https://example.com/queues)','- [What happens when a Kafka consumer falls behind?](https://example.com/kafka)','## Science','- [A beginner guide to the night sky](https://example.com/astronomy)','## Books','- [Building a reading habit that lasts](https://example.com/books)','## Design','- [Making small interfaces easier to navigate](https://example.com/design)'];
+      const dt=new DataTransfer();dt.items.add(new File([lines.join(String.fromCharCode(10))],'demo.md',{type:'text/markdown'}));
+      document.getElementById('restore-file').files=dt.files;await document.getElementById('restore-file').onchange();
+      const states=document.querySelectorAll('.reading-state');states[0].value='reading';states[0].dispatchEvent(new Event('change'));
+      const updated=document.querySelectorAll('.reading-state');updated[1].value='read';updated[1].dispatchEvent(new Event('change'));document.activeElement?.blur();
+    })()`);
+    const screenshot = async name => {
+      await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+      const shot=await cdp('Page.captureScreenshot',{format:'png'});await writeFile(join(directory,name+'.png'),Buffer.from(shot.data,'base64'));
+    };
+    await screenshot('reading-light');
+    await evaluate(`document.querySelectorAll('#chats button')[1].click()`);await screenshot('selected-chat-light');
+    await evaluate(`document.querySelector('#chats button').click()`);
+    await evaluate('document.getElementById("theme").click()');await screenshot('reading-dark');
+    await evaluate('document.getElementById("tab-export").click()');await screenshot('backup-dark');
+    await evaluate('document.querySelector(".danger-zone").open=true;document.getElementById("clear-all").click()');await screenshot('clear-confirmation');
+    console.log(`Saved synthetic UI screenshots to ${directory}`);
+  }
 } finally {
   browser?.kill();
 }

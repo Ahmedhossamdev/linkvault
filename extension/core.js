@@ -74,8 +74,8 @@ export function markdown(links, name = 'Link collection', context = false) {
   for (const [topic, items] of groups) {
     output += `\n## ${escape(topic)}\n\n`;
     for (const item of items) {
-      const url = item.url.replace(/[()<>\s]/g,c => '%' + c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0'));
-      output += `- [${escape(item.title || item.url)}](${url})\n`;
+      const url = item.url.replace(/[<>\s]/g,c => '%' + c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')).replace(/\\/g,'\\\\').replace(/&/g,'&amp;');
+      output += `- [${escape(item.title || item.url)}](<${url}>)\n`;
       if (context) for (const source of item.sources || []) output += `  - ${escape([source.sender,source.date,source.text].filter(Boolean).join(' | '))}\n`;
     }
   }

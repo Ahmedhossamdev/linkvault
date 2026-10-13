@@ -32,6 +32,21 @@ The SVGs are deliberately constructed vector artwork. They contain no generated 
 
 Rust is a small identifying detail, not a reason to recolor every interface control. Functional statuses keep their own colors.
 
+### Editorial interface palette (0.4.0)
+
+The reading interface pairs paper panels with forest ink and restrained rust accents. The logo palette above stays unchanged.
+
+| Role | Light | Dark |
+| --- | --- | --- |
+| Background | `#f3eee3` | `#191e1b` |
+| Paper panel | `#fffdf7` | `#252d28` |
+| Heading | `#24392d` | `#f8f1e4` |
+| Accent | `#93432e` | `#e5a68a` |
+| Read badge | `#e4efdf` | `#2d4437` |
+| Reading badge | `#f5e7d5` | `#49382a` |
+
+Site marks use local domain initials or short labels, not downloaded favicons or third-party logos. Serif titles provide the editorial character; URLs and controls stay compact and readable.
+
 ## Typography and spacing
 
 Use Georgia or an available traditional serif for the name and editorial titles. Use the existing system sans-serif for controls and supporting text. Avoid remote font dependencies. Preserve the wordmark's capital L and V.

@@ -6,7 +6,7 @@ Keep shared links in a local reading library, track reading progress, and export
 
 ## Release status and browsers
 
-Version 0.3.1 is a pre-release for manual testing, not a browser-store release. Browser-specific release results have not been recorded yet.
+Version 1.0.0 is the first GitHub release for manual testing, not a browser-store release. Synthetic Chromium fixture checks pass; they do not establish live LinkedIn compatibility or support in every browser.
 
 | Browser | Extensions page | Status |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ Firefox is not supported by the current manifest, which declares a Chrome backgr
 1. Open your browser's extensions page from the table above.
 2. Enable Developer mode.
 3. Choose **Load unpacked** and select this `extension` directory.
-4. Pin LinkVault to the toolbar and click its icon. Follow the first-open walkthrough, or skip it and replay it later from Guide.
+4. Pin LinkVault to the toolbar and click its icon. Follow the first-open walkthrough, or skip it and replay it later from Help.
 
 This version targets Chrome and Chromium version 123 or newer. Firefox packaging has not been implemented or verified. No store publication is included.
 
@@ -55,9 +55,21 @@ If the page does not move, return to the dashboard and check its status. **Show 
 
 ### File import
 
-Import saved chat HTML, a text link list, or a LinkVault version 1 or version 2 JSON backup. HTML, TXT, and old collection backups each create a chat, using your optional chat name or the filename. A version 2 backup merges its original chats and reading states into your library. File import does not connect to LinkedIn or inject anything into its page. The extension cannot verify whether the original file was obtained in accordance with platform rules.
+Use **Collect** for saved chat HTML or TXT link lists. Use **Backup & restore** for LinkVault JSON backups or Markdown. After a successful import, LinkVault opens Reading list with filters reset so you can see the result. Existing links are merged, not replaced. File import does not connect to LinkedIn or inject anything into its page.
 
-HTML extraction prefers LinkedIn message bodies. When their markup is missing, it falls back to candidate links from the page and displays a warning. Review the result to remove navigation or unrelated links. Supported import formats are HTML, TXT, and LinkVault JSON, not LinkedIn archive ZIP or CSV.
+HTML extraction prefers LinkedIn message bodies. When their markup is missing, it falls back to candidate links from the page and warns you. Review the result to remove unrelated links. LinkedIn archive ZIP/CSV import is not implemented.
+
+### Restore JSON or Markdown
+
+In **Backup & restore**, choose a `.json`, `.md`, or `.markdown` file. Version 2 JSON keeps original chat membership, reading states, aliases, edits, message context, and deletion exclusions. Old version 1 backups restore their link collections. Existing local reading progress wins on duplicates. Invalid files and failed writes leave the current library unchanged.
+
+Markdown imports HTTP/HTTPS inline links, autolinks, and reference links. The first H1 supplies a collection name and H2 headings supply topics. You can override the name before choosing the file. Escaped titles, URL parentheses, decimal/hex numeric references, and common semicolon-terminated named references such as `&amp;` are supported. Unknown named references and percent escapes remain literal. Export uses angle-bracket destinations so parentheses do not create different URL identities on reimport. Images, code, unused reference definitions, and nested exported context are ignored; HTML is not rendered or executed. Bare URLs in prose are not treated as Markdown links: use TXT for a plain URL list.
+
+New Markdown links start **To read**, even if exported titles contain `(Read)` or a Markdown checkbox is checked. Existing shared links keep their current state. Markdown cannot recover original multi-chat membership, aliases, reading history, or private context. Use JSON for full-fidelity restoration.
+
+### Source tab recovery
+
+Launch LinkVault by clicking its toolbar icon while the full LinkedIn conversation tab is active. A dashboard restored after restarting Chrome may retain an obsolete tab ID. Open your conversation and launch from that tab again. Start, Return to conversation, and diagnostics now show reconnection instructions rather than a raw missing-tab error. Clicking the toolbar while already on LinkVault keeps the dashboard and its current connection; it does not reconnect to another chat automatically.
 
 ### Official message archive
 
@@ -67,19 +79,27 @@ LinkedIn's [Download your data](https://www.linkedin.com/help/linkedin/answer/a1
 
 **All chats** is the general reading list. Shared URLs appear once with their originating chats and one reading state. Filter independently by chat, subject topic, site, reading state, or search. Local suggestions cover programming and broader subjects such as science, books, health, finance, travel, food, art, and music. Suggestions are imperfect: enter custom topics in Edit title & topic. Edited topics survive enrichment and backup restoration. YouTube and GitHub are site filters, not subject topics. There is no AI labeling.
 
-The interface uses a paper-like light theme and neutral dark theme, local system fonts, serif titles, and visible monospace URLs. Use the header's sun/moon button to switch themes; your choice is remembered. Compact titles show at most two lines, with full titles retained in the editor and hover tooltip. Footer links point to Ahmed's blog, GitHub, and LinkedIn. Buy Me a Coffee is in the header. **Collect links** opens the separate Collect tab. Guide contains permanent instructions and a replayable walkthrough.
+The warm editorial interface uses paper panels, rust accents, compact serif link cards, and readable URLs. Site badges are generated locally, with no favicon or image requests. Subtle sage and warm reading-state accents distinguish Read and Reading. Both light and dark modes are supported. Main navigation is **Reading list**, **Collect**, **Backup & restore**, and **Reports**; Help contains instructions and the replayable walkthrough. Switching sections starts at the top. Current scope and removable filter chips show why links are included. Topic/site filters are expandable, and chat renaming appears only when a chat is selected. Buy Me a Coffee and theme switching remain in the header.
+
+Use **Chat settings** to rename or delete the selected chat. Deleting a chat removes its private links and captured context, but keeps links shared with another chat. Add custom topics in the Topics panel and assign one from a link's **Edit title & topic** menu. Custom topics remain in JSON backups even when empty. Deleting a custom topic moves its links to Unsorted instead of deleting them. Built-in topic suggestions remain available.
 
 The folded-page icon and bookmark cutout are LinkVault's own mark. Browser icons are packaged at 16, 32, 48, and 128 pixels. See the [identity guide](../brand/IDENTITY.md) for artwork and usage.
 
 Reports shows current To read, Reading, Read, and Archived counts across the whole library, with chat and topic breakdowns. Shared links count once overall and once in each originating chat. Deleted links do not count. Archived is a separate state, not evidence of reading. Dates, streaks, lifetime totals, and verified reading are not tracked.
 
-Open **Export & backup** for downloads. Its summary shows how many links Markdown will export from your current reading-list filters, and how many links the full JSON backup contains. Switching tabs preserves filters. Pagination appears above and below the links; both controls share the same page and page size.
+Open **Backup & restore** for imports and downloads. Its summary shows the filtered Markdown count and full JSON count. Switching tabs preserves filters. Pagination appears above and below links with a shared page and size.
 
 The list renders 10 links per page by default, with 25, 50, and 100 also available. The compact top pagination bar stays visible while you scroll through links; bottom controls share its page and size. Changing a filter or size returns to page one. Reading states persist across pages. Markdown and title fetching operate on the full filtered list, not only the visible page; JSON always backs up the full library. Buy Me a Coffee is in the header, alongside collection and theme controls.
 
 - **To read**, **Reading**, **Read**, and **Archived** are explicit, editable states. Opening a page does not claim you have read it. **Active** hides archived links; **Archived** and **Everything** let you find and restore them.
 - **Delete** removes a link from all chat views. Deleted URLs are excluded from future collection and backup imports. **Undo last deletion** restores its state and chat memberships until you close the dashboard or delete another link. Archive a link instead if you might want it later.
 - Edit titles and topics under each link's metadata control. A link's checkbox means **Read**: new links are unchecked, checking marks a link Read, and unchecking resets it to To read. Reading and Archived remain unchecked. This reading state is shared across chat views. Checkboxes are not export selection controls.
+
+### Delete all links
+
+In **Backup & restore**, expand **Delete all links**. The confirmation shows the full-library count, not the filtered count, and offers a JSON backup first. Type `DELETE` to enable the final action. It removes saved links, reading states, captured message context, deletion exclusions, and the retained legacy collection snapshot. Chat collections and preferences stay.
+
+There is no bulk Undo. Import a saved JSON backup to restore the removed links; ordinary single-link Delete still has its session Undo. Clearing exclusions allows links to be imported again. Failed storage writes leave the previous library intact. This action is disabled during live collection and invalidates finished capture sessions so delayed packets cannot repopulate it. It does not erase previously downloaded backups or promise physical secure erasure of browser storage.
 
 URLs are deduplicated with tracking parameters removed. Case-sensitive paths, meaningful query parameters, and fragments are preserved. LinkedIn post links are retained; profile and navigation links are filtered out. Different short URLs pointing to the same destination can remain separate until you resolve them with optional enrichment. Resolving a URL into an existing item merges its chat memberships and context, preserving that destination item's reading state. Resolved short URLs are retained as aliases, so recapture does not create an unread duplicate. Aliases travel in backups and are excluded when deleting their article. Resolving to a deleted destination removes the short-link entry instead of resurrecting that article.
 

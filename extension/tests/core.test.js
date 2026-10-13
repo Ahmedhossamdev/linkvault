@@ -20,7 +20,7 @@ test('merge preserves edits and repeated-message provenance', () => {
 test('export escapes Markdown syntax and excludes deselected items', () => {
   const output = markdown([{url:'https://example.com/a(b)',title:'[title]\nnext',topic:'db',selected:true,sources:[]},{url:'https://hidden.com',selected:false}], 'Friends');
   assert.ok(output.includes('\\[title\\] next'));
-  assert.ok(output.includes('a%28b%29'));
+  assert.ok(output.includes('](<https://example.com/a(b)>)'));
   assert.ok(!output.includes('hidden.com'));
 });
 test('local keyword topics remain available without an AI integration', () => {

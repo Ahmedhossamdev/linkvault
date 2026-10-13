@@ -1,40 +1,42 @@
 # Release candidate status
 
-LinkVault extension 0.3.1, prepared for manual testing on 2026-10-11. This document is a handoff, not a production-readiness certificate.
+LinkVault extension 1.0.0, prepared as the first GitHub release on 2026-10-13. It is a manual-install release, not a browser-store release.
 
-## Pagination follow-up (0.3.1)
+## Implemented
 
-The default page size is now ten links, with 25/50/100 still available. Top controls are grouped into a compact sticky toolbar. Bottom navigation remains synchronized. Buy Me a Coffee is in the header. The previous 0.3.0 ZIP is retained, but use the new 0.3.1 candidate to test these changes. The extension suite now contains 77 passing tests; live sticky positioning still needs browser verification.
+- Four main sections: Reading list, Collect, Backup & restore, and Reports. Help contains the walkthrough.
+- Warm editorial light/dark themes with paper panels, rust accents, compact cards, local site badges, and reading-state colors. No remote image requests were added.
+- Clear reading scope, removable filters, expandable topic/site navigation, chat renaming only for selected chats, ten-link pages, and sticky navigation.
+- Selected chats can be deleted without removing shared links. Custom topics can be added, assigned per link, backed up even when empty, and deleted by moving their links to Unsorted.
+- JSON restoration alongside downloads. Markdown imports titles, heading topics, and links; new items start To read.
+- Confirmed Delete all links with a full-library count, optional JSON backup, typed confirmation, and no bulk Undo.
+- Bulk deletion clears links, context, deletion exclusions, and legacy recovery data while preserving chat metadata and preferences. Failed writes do not replace the existing library.
+- Finished capture sessions are invalidated before imports and bulk deletion so delayed packets cannot overwrite restored data or resurrect links.
+- Toolbar clicks on the dashboard preserve it. Stale source IDs receive reconnection instructions instead of raw browser errors; no other chat is selected automatically.
+- The sun/moon SVG visibility issue found in browser screenshots is corrected.
+- The library remains version 2 and keeps the existing local-storage/portable-backup contract. No new permissions, runtime dependencies, servers, or accounts were added.
 
-## Prepared locally
+## Verification
 
-- Export & backup is a separate tab. Markdown keeps reading-list filters and exports all filtered pages; JSON backs up the whole library.
-- Pagination appears above and below links with shared page and size controls.
-- Branding, packaged browser icons, local privacy/security/contribution docs, and launch copy are present.
-- Synthetic HTML, TXT, and 125-link pagination fixtures are in `examples/`.
-- An allowlisted Chromium packaging script creates a ZIP without development settings, tests, or user data.
-- A GitHub workflow runs extension and Python tests and produces a testing artifact. It has not run on GitHub yet.
+All 155 extension tests, two stdlib packaging tests, and three existing Python assertion checks passed locally. Pytest is not installed here; the Python assertions were invoked directly with the source path configured. CI installs pytest.
 
-## Verification boundaries
+Synthetic Chromium fixture checks passed outside the restricted sandbox. They cover imports, URL/title preservation, explicit reading states, downloads, JSON/Markdown restore, deletion confirmation/cancellation, restore after bulk deletion, sticky pagination, theme-icon visibility, controlled manual/automatic capture, and narrow layouts. Synthetic light/dark screenshots were inspected.
 
-Local result: 76 extension tests passed, two stdlib packaging tests passed, and the three existing Python assertion checks passed via direct invocation. Every file in the 22-file ZIP matched its runtime source when checked. No recognizable credential patterns were found in the reviewed source directories; that limited scan is not an independent security audit.
+These fixtures use a Chrome API shim and invented conversations. They do not prove real LinkedIn compatibility, account safety, every supported browser, or store acceptance. The user reported that launching from the active full LinkedIn conversation worked before this update. Full manual release checks remain in [RELEASING.md](RELEASING.md).
 
-A focused review found a stale export count after editing a searched title. The fix now refreshes the filtered list, pagination, export summary, and download availability immediately. A regression test covers the reported sequence.
+## Source and publishing
 
-Extension unit/handler tests and packaging tests can run here. Existing Python checks can run directly, but pytest is not installed in this environment. CI installs pytest before running the complete Python suite.
+The repository is https://github.com/Ahmedhossamdev/linkvault. Earlier changes were committed and pushed through 69791b7. The current 1.0.0 changes need a commit, push, GitHub Actions result, and GitHub Release before this status is updated to published.
 
-Chromium fixture execution is blocked by this environment: the browser aborts with `sandbox_host_linux.cc`, `Operation not permitted`, and `ECONNRESET`, even with its no-sandbox flag. The fixture tests are maintained, but no live browser or visual-pass claim is made.
+The Chromium package is produced with the runtime allowlist in scripts/package_extension.py. Load the exact extracted testing ZIP in a separate profile and restore your JSON backup there. Keep your original profile and backup untouched until restoration is verified.
 
-No manual release checks have been recorded for Chrome, Edge, Brave, or Opera. Firefox is not ported. No store package has been submitted or approved.
+The local `dist/linkvault-chromium-1.0.0.zip` contains 22 runtime files verified against the current source. SHA256: `b881986ae81d70bf1e23b25f9e2146538704d92c9973cd6975344dbfbee970a9`. Upload this exact file as the GitHub Release asset.
 
-## External blockers
+No store submission was made. Firefox is not ported. Publishing the source publicly or submitting to browser stores remains a separate decision.
 
-Ahmed created `Ahmedhossamdev/linkvault` using `gh repo create --private` and shared the successful result. Repository URL: https://github.com/Ahmedhossamdev/linkvault. API connections still fail from this restricted environment, so repository visibility cannot be independently checked here. No source was uploaded by the assistant. This checkout exposes no usable Git repository metadata, so no commit or tag was made here.
+## Remaining
 
-Verify private visibility on your own machine before uploading the reviewed source. Do not share tokens or upload `.aws`, `.codex`, `.agents`, local environments, or real chats/backups. Changing repository visibility requires a separate decision.
-
-## Your remaining checks
-
-Use [RELEASING.md](RELEASING.md), starting with import, Read state, JSON export, and restoration in a fresh profile. Test the exact extracted ZIP, not only the development folder. Record browser versions, results, and any skipped live-capture tests.
-
-After that: review permission/data-use disclosures, host the privacy policy publicly, capture synthetic screenshots, and decide whether to release a beta ZIP or submit to a browser store. A public LinkedIn announcement should use accurate browser availability and include the live-collection account risk.
+- The requested warm editorial direction is implemented. Manually check the light and dark layouts in your browser before release.
+- Test the exact 1.0.0 package in real Chrome, including your source-tab permissions and backup restoration.
+- Record browser versions and results.
+- Before a store submission, prepare the listing, synthetic screenshots, permission/data-use disclosures, and a public privacy-policy page.

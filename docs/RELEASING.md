@@ -1,6 +1,6 @@
 # Manual testing and release checklist
 
-Extension 0.3.1 is a testing candidate, not a store release.
+Extension 1.0.0 is the first GitHub release for manual installation, not a store release.
 
 ## Browser results
 
@@ -29,7 +29,11 @@ Install unpacked in a fresh Chrome test profile. Import synthetic TXT links, mar
 | Reading | Open new link, then check it | Only explicit marking changes it to Read |
 | Compact rows | Long title and URL | Two visible title lines; full editable title; visible URL |
 | Pagination | More than 100 links | Ten rows by default; top bar remains visible while scrolling; top/bottom controls share page and size; exports include all filtered pages |
-| Export tab | Filter reading list; switch to Export & backup | Summary matches filters; Markdown includes all filtered pages; JSON includes whole library |
+| Backup & restore | Filter reading list; switch sections | Summary matches filters; Markdown includes all filtered pages; JSON includes whole library |
+| Markdown import | Escaped titles, headings, URL parentheses, checked boxes | Valid links and topics imported; new items remain To read; existing progress kept |
+| Delete all | Full backup; type DELETE; confirm | Links/context/exclusions and legacy snapshot cleared across all chats; preferences kept; saved JSON restores links |
+| Delete cancellation/failure | Cancel, wrong confirmation, or failed write | Existing data untouched; no silent loss |
+| Source recovery | Restore old dashboard or click toolbar from LinkVault | Helpful reconnect instructions; no self-closing or guessed source conversation |
 | Theme / layout | Light, dark, keyboard, narrow window | No overlap or horizontal overflow; usable focus |
 | Reports | Change states and delete | Correct current counts; shared links count once overall |
 | Delete / undo | Delete shared URL; recapture; undo | Excluded from recapture; membership/state restored by undo |
@@ -54,7 +58,7 @@ Skip live cases if you do not accept the platform risk, and record Not tested. N
 
 ## Release package
 
-Run `python scripts/package_extension.py` from the root. It creates `dist/linkvault-chromium-0.3.1.zip` and prints its SHA256. Existing outputs are not overwritten: use `--output /path/to/a/new-name.zip` for another candidate. Extract the ZIP to a new folder and load that folder unpacked for manual testing.
+Run `python scripts/package_extension.py` from the root. It creates `dist/linkvault-chromium-1.0.0.zip` and prints its SHA256. Existing outputs are not overwritten: use `--output /path/to/a/new-name.zip` for another candidate. Extract the ZIP to a new folder and load that folder unpacked for manual testing.
 
 Use the [synthetic examples](../examples/README.md) when testing without private chat data. The release status and remaining checks are recorded in [RELEASE_STATUS.md](RELEASE_STATUS.md).
 

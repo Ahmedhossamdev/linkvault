@@ -9,6 +9,9 @@ class Element {
   replaceChildren(...nodes) {this.children = nodes;}
   setAttribute(key,value) {this.attributes[key] = value;}
   getAttribute(key) {return this.attributes[key];}
+  toggleAttribute(key,force) {if (force) this.attributes[key] = '';else delete this.attributes[key];}
+  showModal() {this.open = true;}
+  close() {this.open = false;this.onclose?.();}
   click() {return this.onclick?.();}
   focus() {globalThis.document.activeElement = this;}
   scrollIntoView() {this.scrolledIntoView = true;}
@@ -16,24 +19,24 @@ class Element {
 }
 function descendants(element) {return element.children.flatMap(child => [child,...descendants(child)]);}
 const html = await readFile(new URL('../app.html',import.meta.url),'utf8');
-async function dashboard(seed = {},{failWrites = false,ownerAvailable = true} = {}) {
+async function dashboard(seed = {},{failWrites = false,ownerAvailable = true,sourceAvailable = true,beforeWrite = async () => {}} = {}) {
   const ids = Object.fromEntries([...html.matchAll(/id="([^"]+)"/g)].map(match => {const element = new Element();element.id = match[1];return [match[1],element];}));
   ids.mode.value = 'manual';ids.speed.value = '750';ids.risk.checked = true;
-  const saved = structuredClone(seed), calls = [], listeners = [];
+  const saved = structuredClone(seed), calls = [], listeners = [], scrolls = [];
   const previous = new Map(['document','location','chrome','window','navigator','LinkVaultProgress'].map(key => [key,Object.getOwnPropertyDescriptor(globalThis,key)]));
   const lifecycle = {};Object.defineProperty(globalThis,'navigator',{value:{locks:{async request(name,options,callback){return callback(ownerAvailable ? {name} : null);}}},configurable:true});
   globalThis.document = {documentElement:new Element('html'),getElementById:id => {assert.ok(ids[id],`Missing HTML element: ${id}`);return ids[id];},createElement:tag => new Element(tag),querySelectorAll:() => Object.values(ids).flatMap(element => [element,...descendants(element)])};
   globalThis.location = {href:'https://extension.test/app.html?tab=7'};
-  globalThis.window = {addEventListener(name,callback){lifecycle[name] = callback;}};
+  globalThis.window = {addEventListener(name,callback){lifecycle[name] = callback;},scrollTo(options){scrolls.push(options);}};
   globalThis.LinkVaultProgress = {phases:{},summary:() => 'Progress'};
   globalThis.chrome = {
-    storage:{local:{async get(){return saved;},async set(data){if (failWrites) throw new Error('Storage quota exceeded');Object.assign(saved,structuredClone(data));}}},
+    storage:{local:{async get(){return saved;},async set(data){await beforeWrite(data);if (failWrites) throw new Error('Storage quota exceeded');Object.assign(saved,structuredClone(data));}}},
     runtime:{onMessage:{addListener(fn){listeners.push(fn);}}},
-    tabs:{async get(){return {url:'https://www.linkedin.com/messaging/thread/test/'};},async update(id){calls.push(`focus:${id}`);},async sendMessage(id,message){calls.push(message.type);return {ok:true};},onRemoved:{addListener(){}},onUpdated:{addListener(){}}},
+    tabs:{async get(){if (!sourceAvailable) throw new Error('No tab with id: 7.');return {id:7,url:'https://www.linkedin.com/messaging/thread/test/'};},async update(id){if (!sourceAvailable) throw new Error('No tab with id: 7.');calls.push(`focus:${id}`);},async sendMessage(id,message){calls.push(message.type);return {ok:true};},onRemoved:{addListener(){}},onUpdated:{addListener(){}}},
     scripting:{async executeScript(){calls.push('inject');}},permissions:{async request(){return true;}},
   };
   await import(`../app.js?fixture=${crypto.randomUUID()}`);
-  return {ids,saved,calls,listeners,restore(){lifecycle.pagehide?.();for (const [key,descriptor] of previous) {if (descriptor) Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}};
+  return {ids,saved,calls,listeners,scrolls,restore(){lifecycle.pagehide?.();for (const [key,descriptor] of previous) {if (descriptor) Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}};
 }
 test('dashboard migrates, shares reading progress across chats, filters, deletes, and backs up all data',async () => {
   const legacy = {version:1,name:'Old friends',links:[{url:'https://example.com/linux',title:'Linux notes',selected:true,topic:'os-linux',sources:[]}]};
@@ -61,7 +64,7 @@ test('dashboard migrates, shares reading progress across chats, filters, deletes
       URL.createObjectURL = value => {blob = value;return 'blob:fixture';};URL.revokeObjectURL = () => {};globalThis.setTimeout = () => 1;
       ids.json.click();const backup = JSON.parse(await blob.text());assert.equal(backup.items.length,2);assert.equal(backup.chats.length,2);assert.equal(backup.items.find(item => item.url.includes('/linux')).state,'archived');
       ids.file.files = [{name:'backup.json',size:100,async text(){return JSON.stringify(backup);}}];await ids.file.onchange();assert.equal(saved.library.items.length,2);
-      ids.context.checked = true;ids.markdown.click();assert.match(await blob.text(),/Archived/);
+      filter('states','Archived (').click();ids.context.checked = true;ids.markdown.click();assert.match(await blob.text(),/Archived/);
     } finally {URL.createObjectURL = create;URL.revokeObjectURL = revoke;globalThis.setTimeout = timeout;}
     await ids.start.click();assert.deepEqual(app.calls,['inject','start','focus:7']);
     const acknowledged = await new Promise(resolve => app.listeners[0]({type:'capture',thread:'https://www.linkedin.com/messaging/thread/test/',runId:1,running:true,status:'Watching',links:[{url:'https://example.com/linux',sources:[{text:'Live context'}]}],progress:{phase:'manual'}},{tab:{id:7}},resolve));
@@ -128,7 +131,7 @@ test('export tab keeps the reading filters and exports all their pages',async ()
     URL.createObjectURL = value => {blob = value;return 'blob:fixture';};globalThis.setTimeout = () => 1;
     app.ids.markdown.click();assert.match(await blob.text(),/31 unique links/);assert.doesNotMatch(await blob.text(),/https:\/\/example.com\/other/);
     app.ids.json.click();assert.equal(JSON.parse(await blob.text()).items.length,32);
-    app.ids['tab-export'].onkeydown({key:'ArrowRight',preventDefault(){}});assert.equal(app.ids['panel-guide'].hidden,false);
+    app.ids['tab-export'].onkeydown({key:'ArrowRight',preventDefault(){}});assert.equal(app.ids['panel-reports'].hidden,false);
     app.ids['tab-library'].click();assert.equal(app.ids.search.value,'Science');
   } finally {URL.createObjectURL = create;globalThis.setTimeout = timeout;app.restore();}
 });
@@ -184,6 +187,162 @@ test('collection tab reveals live modes without scrolling below the library',asy
     await app.ids.theme.click();assert.equal(document.documentElement.getAttribute('data-theme'),'light');assert.equal(app.saved.theme,'light');assert.equal(app.ids.theme.getAttribute('aria-label'),'Switch to dark theme');
     await app.ids.theme.click();assert.equal(document.documentElement.getAttribute('data-theme'),'dark');assert.equal(app.saved.theme,'dark');assert.equal(app.ids.theme.getAttribute('aria-label'),'Switch to light theme');
   } finally {app.restore();}
+});
+test('backup restore imports Markdown as unread and merges JSON without losing progress',async () => {
+  const app = await dashboard({onboardingVersion:1,collection:{version:1,name:'Existing',links:[{url:'https://example.com/science',title:'My science',topic:'science',sources:[]}]}});
+  try {
+    assert.ok(app.ids['restore-file'],'Restore must be discoverable with backups');
+    const state = descendants(app.ids.links).find(node => node.className === 'reading-state');state.value = 'read';state.onchange();
+    await new Promise(resolve => setImmediate(resolve));
+    const backup = structuredClone(app.saved.library);
+    app.ids['tab-export'].click();app.ids['restore-file'].files = [{name:'reading.md',size:80,async text(){return '# My reading\n\n## Books\n- [A novel (Read)](https://example.com/books)';}}];
+    await app.ids['restore-file'].onchange();
+    assert.equal(app.saved.library.items.length,2);assert.equal(app.saved.library.items.find(item=>item.url.endsWith('/books')).state,'unread');
+    assert.equal(app.saved.library.items.find(item=>item.url.endsWith('/books')).title,'A novel');
+    assert.equal(app.saved.library.items.find(item=>item.url.endsWith('/science')).state,'read');
+    app.ids['restore-file'].files = [{name:'library.json',size:100,async text(){return JSON.stringify(backup);}}];await app.ids['restore-file'].onchange();
+    assert.equal(app.saved.library.items.length,2);assert.equal(app.saved.library.items.find(item=>item.url.endsWith('/science')).state,'read');
+    assert.equal(app.ids['panel-library'].hidden,false);
+  } finally {app.restore();}
+});
+test('invalid restore file does not overwrite the library or create empty chats',async () => {
+  const app = await dashboard({onboardingVersion:1,collection:{version:1,name:'Existing',links:[{url:'https://example.com',sources:[]}]}});
+  try {
+    assert.ok(app.ids['restore-file']);const before = structuredClone(app.saved.library);
+    for (const [name,text] of [['bad.json','{"version":2,"items":[{}]}'],['empty.md','# Nothing here']]) {
+      app.ids['restore-file'].files = [{name,size:50,async text(){return text;}}];await app.ids['restore-file'].onchange();assert.deepEqual(app.saved.library,before);
+    }
+  } finally {app.restore();}
+});
+test('delete all links requires explicit confirmation and permits restoring a full backup',async () => {
+  const legacy = {version:1,name:'Old',links:[{url:'https://example.com/one',sources:[{text:'Private context'}]},{url:'https://example.com/two',sources:[]}]};
+  const app = await dashboard({theme:'dark',onboardingVersion:1,collection:legacy});
+  try {
+    assert.ok(app.ids['clear-all']);const before = structuredClone(app.saved.library);
+    app.ids.search.value = 'one';app.ids.search.oninput();
+    app.ids['clear-all'].click();assert.equal(app.ids['clear-dialog'].open,true);assert.match(app.ids['clear-count'].textContent,/2/);
+    await app.ids['confirm-clear'].click();assert.deepEqual(app.saved.library,before);
+    app.ids['cancel-clear'].click();assert.equal(app.ids['clear-dialog'].open,false);assert.deepEqual(app.saved.library,before);
+    app.ids['clear-all'].click();app.ids['clear-confirm'].value = 'DELETE';await app.ids['confirm-clear'].click();
+    assert.equal(app.saved.library.items.length,0);assert.equal(app.saved.library.deleted.length,0);assert.equal(app.saved.collection,null);
+    assert.equal(app.saved.theme,'dark');assert.equal(app.saved.onboardingVersion,1);assert.equal(app.saved.library.chats.length,1);
+    assert.equal(app.ids['clear-dialog'].open,false);assert.equal(app.ids.search.value,'');assert.equal(app.ids.undo.disabled,true);
+    app.ids['restore-file'].files = [{name:'backup.json',size:100,async text(){return JSON.stringify(before);}}];await app.ids['restore-file'].onchange();
+    assert.equal(app.saved.library.items.length,2);assert.equal(app.saved.library.items[0].sources[0].text,'Private context');
+  } finally {app.restore();}
+});
+test('failed delete-all storage write leaves the existing library and legacy recovery data intact',async () => {
+  const library = {version:2,chats:[{id:'a',source:'demo',name:'A'}],items:[{url:'https://example.com',title:'Article',topic:'books',chatIds:['a'],state:'read',sources:[]}],deleted:[]};
+  const collection = {version:1,links:[{url:'https://example.com'}]};
+  const app = await dashboard({library,collection,onboardingVersion:1},{failWrites:true});
+  try {
+    assert.ok(app.ids['clear-all']);app.ids['clear-all'].click();app.ids['clear-confirm'].value = 'DELETE';await app.ids['confirm-clear'].click();
+    assert.deepEqual(app.saved.library,library);assert.deepEqual(app.saved.collection,collection);assert.equal(app.ids['clear-dialog'].open,true);
+    assert.match(app.ids['clear-error'].textContent,/Storage quota/);
+  } finally {app.restore();}
+});
+test('reading filters have removable chips and chat rename appears only in a selected chat',async () => {
+  const app = await dashboard({onboardingVersion:1,collection:{version:1,name:'Friends',links:[{url:'https://example.com/science',title:'Astronomy',topic:'science',sources:[]}]}});
+  try {
+    assert.ok(app.ids['chat-settings']);assert.ok(app.ids['selected-chat-actions']);assert.equal(app.ids['chat-settings'].hidden,true);assert.equal(app.ids['selected-chat-actions'].hidden,true);assert.equal(app.ids['active-filters'].hidden,true);
+    app.ids.chats.children.find(node=>node.textContent.startsWith('Friends')).click();assert.equal(app.ids['chat-settings'].hidden,false);assert.equal(app.ids['selected-chat-actions'].hidden,false);assert.match(app.ids['selected-chat-name'].textContent,/Friends/);
+    app.ids.search.value = 'Astronomy';app.ids.search.oninput();assert.equal(app.ids['active-filters'].children.length,2);
+    app.ids['active-filters'].children.find(node=>node.textContent.startsWith('Search')).click();assert.equal(app.ids.search.value,'');
+    app.ids.reset.click();assert.equal(app.ids['chat-settings'].hidden,true);assert.equal(app.ids['selected-chat-actions'].hidden,true);assert.equal(app.ids['active-filters'].hidden,true);
+    app.ids['tab-guide'].click();assert.equal(app.ids['panel-guide'].hidden,false);assert.equal(app.ids['tab-guide'].getAttribute('aria-expanded'),'true');
+  } finally {app.restore();}
+});
+test('chat and topic management keeps shared links, assigns custom topics, and moves deleted topics to Unsorted',async () => {
+  const library = {version:2,chats:[{id:'chat:a',source:'a',name:'Alice'},{id:'chat:b',source:'b',name:'Bob'}],topics:['Distributed systems'],items:[
+    {url:'https://example.com/shared',title:'Shared',topic:'books',chatIds:['chat:a','chat:b'],state:'unread',sources:[{chatId:'chat:a'},{chatId:'chat:b'}]},
+    {url:'https://example.com/alice',title:'Alice only',topic:'books',chatIds:['chat:a'],state:'unread',sources:[{chatId:'chat:a'}]},
+  ],deleted:[]};
+  const app = await dashboard({library,onboardingVersion:1});
+  try {
+    assert.ok(app.ids['delete-chat'],'Selected chats need a deletion control');
+    assert.ok(app.ids['add-topic'],'Topics need an add control');
+    app.ids['new-topic'].value = 'Systems thinking';
+    await app.ids['add-topic-form'].onsubmit({preventDefault(){}});
+    assert.ok(app.saved.library.topics.includes('Systems thinking'));
+    app.ids.chats.children.find(node => node.textContent.startsWith('Alice')).click();
+    app.ids['delete-chat'].click();assert.equal(app.ids['delete-chat-dialog'].open,true);
+    await app.ids['confirm-delete-chat'].click();
+    assert.deepEqual(app.saved.library.chats.map(chat => chat.name),['Bob']);
+    assert.deepEqual(app.saved.library.items.map(item => item.url),['https://example.com/shared']);
+    const row = app.ids.links.children.find(node => node.className === 'link-row');
+    const topic = descendants(row).find(node => node.className === 'topic');
+    topic.value = 'Distributed systems';topic.onchange();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(app.saved.library.items[0].topic,'Distributed systems');
+    const deleteTopic = descendants(app.ids.topics).find(node => node.className === 'delete-topic');
+    deleteTopic.click();assert.equal(app.ids['delete-topic-dialog'].open,true);
+    await app.ids['confirm-delete-topic'].click();
+    assert.equal(app.saved.library.items[0].topic,'misc-useful');
+    assert.deepEqual(app.saved.library.topics,['Systems thinking']);
+  } finally {app.restore();}
+});
+test('reading cards expose local site badges and current reading state without remote images',async () => {
+  const app = await dashboard({onboardingVersion:1,collection:{version:1,name:'Friends',links:[{url:'https://github.com/example/demo',title:'A project',sources:[]}]}});
+  try {
+    const row = () => app.ids.links.children.find(node=>node.className==='link-row');
+    assert.equal(row().getAttribute('data-state'),'unread');
+    assert.equal(descendants(row()).find(node=>node.className==='site-badge').textContent,'github.com');
+    assert.equal(descendants(row()).find(node=>node.className==='site-mark').textContent,'GH');
+    assert.equal(descendants(row()).find(node=>node.className==='reading-badge').textContent,'To read');
+    const reading = descendants(row()).find(node=>node.className==='reading-state');reading.value='reading';reading.onchange();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(row().getAttribute('data-state'),'reading');assert.equal(descendants(row()).find(node=>node.className==='reading-badge').textContent,'Reading');
+    assert.equal(descendants(row()).filter(node=>node.tagName==='img').length,0);
+  } finally {app.restore();}
+});
+test('closed source tabs give reconnection instructions without touching saved data',async () => {
+  const app = await dashboard({onboardingVersion:1},{sourceAvailable:false});
+  try {
+    await app.ids.start.click();assert.match(app.ids.status.textContent,/conversation.*icon|icon.*conversation/i);assert.doesNotMatch(app.ids.status.textContent,/No tab with id/);
+    await app.ids.source.click();assert.match(app.ids.status.textContent,/conversation.*icon|icon.*conversation/i);assert.equal(app.saved.library,undefined);assert.deepEqual(app.calls,[]);
+  } finally {app.restore();}
+});
+test('switching sections starts at the top rather than retaining a long reading-list scroll position',async () => {
+  const app = await dashboard({onboardingVersion:1});
+  try {
+    app.ids['tab-export'].click();assert.deepEqual(app.scrolls.at(-1),{top:0,behavior:'auto'});
+    const previous = app.scrolls.length;app.ids['tab-guide'].click();assert.equal(app.scrolls.length,previous+1);
+  } finally {app.restore();}
+});
+test('delete-all invalidates finished capture sessions so delayed packets cannot resurrect links',async () => {
+  const app = await dashboard({onboardingVersion:1,collection:{version:1,name:'Existing',links:[{url:'https://example.com/saved',sources:[]}]}});
+  try {
+    await app.ids.start.click();await app.ids.stop.click();
+    app.ids['clear-all'].click();app.ids['clear-confirm'].value = 'DELETE';await app.ids['confirm-clear'].click();
+    let response;
+    const pending = app.listeners[0]({type:'capture',thread:'https://www.linkedin.com/messaging/thread/test/',runId:1,running:false,status:'Late packet',links:[{url:'https://example.com/late'}],progress:{phase:'saving'}},{tab:{id:7}},value=>{response=value;});
+    await new Promise(resolve=>setImmediate(resolve));assert.equal(pending,undefined);assert.equal(response,undefined);assert.equal(app.saved.library.items.length,0);
+  } finally {app.restore();}
+});
+test('deleting a finished captured chat invalidates late packets for that chat',async () => {
+  const app = await dashboard({onboardingVersion:1});
+  try {
+    await app.ids.start.click();await app.ids.stop.click();
+    app.ids.chats.children.find(node => node.textContent.startsWith('LinkedIn chat')).click();
+    app.ids['delete-chat'].click();await app.ids['confirm-delete-chat'].click();
+    let response;
+    const accepted = app.listeners[0]({type:'capture',thread:'https://www.linkedin.com/messaging/thread/test/',runId:1,running:false,status:'Late packet',links:[{url:'https://example.com/late'}],progress:{phase:'saving'}},{tab:{id:7}},value=>{response=value;});
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(accepted,undefined);assert.equal(response,undefined);assert.equal(app.saved.library.items.length,0);
+  } finally {app.restore();}
+});
+test('restore retires finished collectors before writing so late packets cannot overwrite imported links',async () => {
+  let entered, release;
+  const started = new Promise(resolve=>{entered=resolve;}), held = new Promise(resolve=>{release=resolve;});
+  const app = await dashboard({onboardingVersion:1},{beforeWrite:async data=>{if(data.library?.items.some(item=>item.url==='https://example.com/restored')){entered();await held;}}});
+  try {
+    await app.ids.start.click();await app.ids.stop.click();
+    app.ids['restore-file'].files = [{name:'restore.md',size:70,async text(){return '- [Restored article](https://example.com/restored)';}}];
+    const importing = app.ids['restore-file'].onchange();await started;
+    const accepted = app.listeners[0]({type:'capture',thread:'https://www.linkedin.com/messaging/thread/test/',runId:1,running:true,status:'Late packet',links:[{url:'https://example.com/late'}],progress:{phase:'manual'}},{tab:{id:7}},()=>{});
+    release();await importing;await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(accepted,undefined);assert.deepEqual(app.saved.library.items.map(item=>item.url),['https://example.com/restored']);assert.equal(app.ids.stop.disabled,true);
+  } finally {release();app.restore();}
 });
 test('first-open walkthrough can be completed, skipped, and replayed without modifying the library',async () => {
   const app = await dashboard();

@@ -2,7 +2,7 @@ import { mergeLinks, normalizeURL } from './core.js';
 import { importJSON } from './import.js';
 
 export const states = {unread:'To read',reading:'Reading',read:'Read',archived:'Archived'};
-export function emptyLibrary() { return {version:2,chats:[],items:[],deleted:[]}; }
+export function emptyLibrary() { return {version:2,chats:[],topics:[],items:[],deleted:[]}; }
 const identities = item => [item.url,...(item.aliases || [])];
 function mergeEntry(existing,item) {
   existing.chatIds = [...new Set([...existing.chatIds,...item.chatIds])];
@@ -80,6 +80,40 @@ export function setState(library,url,state) {
   const item = library.items.find(item => item.url === url);if (!item) throw new Error('Link not found.');
   item.state = state;
 }
+function normalizedTopic(name) {return typeof name === 'string' ? name.trim().replace(/\s+/g,' ').slice(0,60) : '';}
+export function addTopic(library,name) {
+  const topic = normalizedTopic(name);if (!topic) throw new Error('Enter a topic name.');
+  library.topics ||= [];
+  const existing = library.topics.find(saved => saved.toLocaleLowerCase() === topic.toLocaleLowerCase());
+  if (existing) return existing;
+  library.topics.push(topic);return topic;
+}
+export function setTopic(library,url,topic) {
+  const item = library.items.find(item => item.url === url);if (!item) throw new Error('Link not found.');
+  const name = normalizedTopic(topic) || 'misc-useful';
+  item.topic = name;item.topicEdited = true;item.category = category(item.url,name);
+  return name;
+}
+export function deleteTopic(library,topic) {
+  const name = normalizedTopic(topic);if (!name) throw new Error('Unknown topic.');
+  let movedLinks = 0;
+  for (const item of library.items) if (item.topic === name) {item.topic = 'misc-useful';item.topicEdited = true;item.category = category(item.url,item.topic);movedLinks++;}
+  library.topics = (library.topics || []).filter(saved => saved !== name);
+  return {name,movedLinks};
+}
+export function deleteChat(library,chatId) {
+  const chat = library.chats.find(chat => chat.id === chatId);if (!chat) throw new Error('Unknown chat.');
+  let removedLinks = 0, keptLinks = 0;
+  library.items = library.items.filter(item => {
+    if (!item.chatIds.includes(chatId)) return true;
+    item.chatIds = item.chatIds.filter(id => id !== chatId);
+    item.sources = (item.sources || []).filter(source => source.chatId !== chatId);
+    if (item.chatIds.length) {keptLinks++;return true;}
+    removedLinks++;return false;
+  });
+  library.chats = library.chats.filter(item => item.id !== chatId);
+  return {name:chat.name,removedLinks,keptLinks};
+}
 export function deleteEntry(library,url) {
   const item = library.items.find(item => item.url === url);
   library.items = library.items.filter(item => item.url !== url);
@@ -97,8 +131,9 @@ export function restoreLibrary(data) {
     const previous = importJSON(JSON.stringify(data));const library = emptyLibrary();
     const chat = ensureChat(library,`legacy:${crypto.randomUUID()}`,previous.name || 'Previous collection');ingest(library,chat.id,previous.links);return library;
   }
-  if (data.version !== 2 || !Array.isArray(data.chats) || !Array.isArray(data.items) || !Array.isArray(data.deleted)) throw new Error('Invalid LinkVault library backup.');
+  if (data.version !== 2 || !Array.isArray(data.chats) || !Array.isArray(data.items) || !Array.isArray(data.deleted) || (data.topics !== undefined && !Array.isArray(data.topics))) throw new Error('Invalid LinkVault library backup.');
   const library = emptyLibrary();const ids = new Set();
+  library.topics = [...new Set((data.topics || []).map(normalizedTopic).filter(Boolean))];
   for (const chat of data.chats) {
     if (!chat || typeof chat.id !== 'string' || !chat.id || chat.id.length > 4096 || ids.has(chat.id) || typeof chat.name !== 'string' || typeof chat.source !== 'string') throw new Error('Invalid chat in library backup.');
     ids.add(chat.id);library.chats.push({id:chat.id,name:chat.name.slice(0,160),source:chat.source.slice(0,4096)});
@@ -124,6 +159,8 @@ export function restoreLibrary(data) {
 }
 export function mergeLibrary(library,data) {
   const other = restoreLibrary(data);
+  library.topics ||= [];
+  for (const topic of other.topics) addTopic(library,topic);
   for (const chat of other.chats) if (!library.chats.some(existing => existing.id === chat.id)) library.chats.push(chat);
   for (const item of other.items) {
     if (!identities(item).some(url => library.deleted.includes(url))) insertEntry(library,item);

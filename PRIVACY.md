@@ -22,4 +22,6 @@ Markdown excludes message context by default; the context option includes it. Fu
 
 Delete removes an item from the active library and excludes known URLs against recapture. Undo is session-limited. Deletion does not erase downloaded backups or the retained migration snapshot. Clearing extension data or uninstalling can erase local snapshots, not files exported elsewhere. Back up first if you want to retain your library.
 
+The separate **Delete all links** action requires confirmation and overwrites the saved library's links and exclusions, plus the retained legacy collection value. Chat metadata and preferences remain. Bulk deletion has no Undo; restore from a JSON backup if needed. It does not erase copies in downloaded backups or guarantee physical secure erasure of browser storage.
+
 Do not attach real chats, full backups, browser profiles, or credentials to public issues. Use synthetic examples and redacted diagnostics. See [SECURITY.md](SECURITY.md).
