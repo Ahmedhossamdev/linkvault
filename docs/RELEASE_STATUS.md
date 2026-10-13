@@ -1,6 +1,10 @@
 # Release candidate status
 
-LinkVault extension 0.3.0, prepared for manual testing on 2026-10-11. This document is a handoff, not a production-readiness certificate.
+LinkVault extension 0.3.1, prepared for manual testing on 2026-10-11. This document is a handoff, not a production-readiness certificate.
+
+## Pagination follow-up (0.3.1)
+
+The default page size is now ten links, with 25/50/100 still available. Top controls are grouped into a compact sticky toolbar. Bottom navigation remains synchronized. Buy Me a Coffee is in the header. The previous 0.3.0 ZIP is retained, but use the new 0.3.1 candidate to test these changes. The extension suite now contains 77 passing tests; live sticky positioning still needs browser verification.
 
 ## Prepared locally
 

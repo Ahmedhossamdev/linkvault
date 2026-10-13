@@ -10,7 +10,7 @@ import { acquireOwnership } from './ownership.js';
 const $ = id => document.getElementById(id);
 const tabId = Number(new URL(location.href).searchParams.get('tab'));
 let library = emptyLibrary(), activeChat = '', activeState = 'active', activeCategory = '', activeTopic = '';
-let currentPage = 1, pageSize = 25;
+let currentPage = 1, pageSize = 10;
 let capturing = false, busy = true, ready = false, captureURL = '', captureChat = '', runId = 0, writeQueue = Promise.resolve();
 let lastProgress, lastDeleted;
 let ownership;
@@ -85,7 +85,7 @@ function renderPagination(total) {
       const button = document.createElement('button');button.className = 'secondary page-button';button.textContent = text;button.disabled = disabled;
       if (text === String(currentPage)) button.setAttribute('aria-current','page');
       button.setAttribute('aria-label',/^\d+$/.test(text) ? `Page ${text}` : text);
-      button.onclick = () => {currentPage = page;render();$('page-status-top').scrollIntoView({block:'start'});$('links').focus({preventScroll:true});};nav.append(button);
+      button.onclick = () => {currentPage = page;render();$('pagination-toolbar').scrollIntoView({block:'start'});$('links').focus({preventScroll:true});};nav.append(button);
     };
     add('Previous',currentPage - 1,currentPage === 1);
     const numbers = [...new Set([1,currentPage - 1,currentPage,currentPage + 1,pages].filter(page => page >= 1 && page <= pages))].sort((a,b) => a - b);
@@ -215,7 +215,7 @@ $('file').onchange = () => run(async () => {
   status(`Imported ${incoming.length} unique candidate links into ${chat.name}.${fallback ? ' Chat markup was unavailable: review the generic page links.' : ''}`);$('file').value = '';
 });
 $('search').oninput = () => filterChanged(() => {});$('mode').onchange = controls;
-for (const id of ['page-size','page-size-top']) $(id).onchange = () => filterChanged(() => {const size = Number($(id).value);pageSize = [25,50,100].includes(size) ? size : 25;});
+for (const id of ['page-size','page-size-top']) $(id).onchange = () => filterChanged(() => {const size = Number($(id).value);pageSize = [10,25,50,100].includes(size) ? size : 10;});
 $('name').onchange = () => {if (activeChat) {library.chats.find(chat => chat.id === activeChat).name = $('name').value.trim() || 'Chat';save();render();}};
 $('reset').onclick = () => filterChanged(() => {activeChat = '';activeState = 'active';activeCategory = '';activeTopic = '';$('search').value = '';});
 $('undo').onclick = () => run(async () => {undoDelete(library,lastDeleted);lastDeleted = undefined;await save();status('Deleted link restored, including its reading state and chats.');});

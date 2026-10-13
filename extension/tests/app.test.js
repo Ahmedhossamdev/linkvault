@@ -96,6 +96,7 @@ test('pagination bounds rendered rows, keeps reading state, resets filters, and 
   const rows = () => app.ids.links.children.filter(node => node.className === 'link-row');
   const page = number => app.ids.pagination.children.find(node => node.textContent === String(number));
   try {
+    app.ids['page-size'].value = '25';app.ids['page-size'].onchange();
     assert.equal(rows().length,25);assert.match(app.ids['page-status'].textContent,/1.*25.*61/);
     page(3).click();assert.equal(rows().length,11);assert.match(app.ids['page-status'].textContent,/51.*61/);
     const reading = descendants(rows()[0]).find(node => node.className === 'reading-state');reading.value = 'reading';reading.onchange();
@@ -138,6 +139,7 @@ test('upper and lower pagination share page size, page selection, and filter res
   const button = (id,label) => app.ids[id].children.find(node => node.textContent === label);
   try {
     assert.ok(app.ids['pagination-top'],'Navigation must be available before the links');
+    app.ids['page-size-top'].value = '25';app.ids['page-size-top'].onchange();
     assert.equal(app.ids['page-status-top'].textContent,app.ids['page-status'].textContent);
     button('pagination-top','3').click();assert.equal(rows().length,11);assert.equal(button('pagination','3').getAttribute('aria-current'),'page');
     button('pagination','1').click();assert.equal(button('pagination-top','1').getAttribute('aria-current'),'page');
@@ -160,6 +162,18 @@ test('title edits immediately refresh search matches, export counts, and availab
     assert.equal(app.ids.json.disabled,false);assert.equal(app.saved.library.items[0].title,'Updated article');
     assert.equal(app.ids.links.children.filter(node => node.className === 'link-row').length,0);
     app.ids['tab-library'].click();app.ids.reset.click();assert.equal(app.ids.markdown.disabled,false);
+  } finally {app.restore();}
+});
+test('reading list defaults to ten rows with synchronized sizes and safe fallback',async () => {
+  const links = Array.from({length:61},(_,index) => ({url:`https://example.com/compact-${index}`,title:`Compact article ${index}`,sources:[]}));
+  const app = await dashboard({onboardingVersion:1,collection:{version:1,name:'Compact chat',links}});
+  const rows = () => app.ids.links.children.filter(node => node.className === 'link-row');
+  try {
+    assert.equal(rows().length,10);assert.equal(app.ids['page-size'].value,'10');assert.equal(app.ids['page-size-top'].value,'10');
+    assert.match(app.ids['page-status-top'].textContent,/1 to 10 of 61/);
+    app.ids['pagination-top'].children.find(node => node.textContent === '7').click();assert.equal(rows().length,1);
+    assert.equal(app.ids['pagination-toolbar'].scrolledIntoView,true);
+    app.ids['page-size-top'].value = 'invalid';app.ids['page-size-top'].onchange();assert.equal(rows().length,10);assert.equal(app.ids['page-size'].value,'10');
   } finally {app.restore();}
 });
 test('collection tab reveals live modes without scrolling below the library',async () => {

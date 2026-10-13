@@ -74,6 +74,8 @@ try {
     return {count:document.querySelectorAll('.link-row').length,pwned:!!globalThis.pwned,status:document.getElementById('status').textContent,saved:saved.library.items.length};
   })()`);
   assert.equal(importResult.count,1);assert.equal(importResult.saved,1);assert.equal(importResult.pwned,false);
+  assert.equal(await evaluate('document.querySelector("header .support-link").href'),'https://buymeacoffee.com/ahmedhossamdev');
+  assert.equal(await evaluate("Array.from(document.links).filter(link=>link.href==='https://buymeacoffee.com/ahmedhossamdev').length"),1);
   assert.match(importResult.status,/Imported 1/);
   await evaluate(`document.getElementById('tab-library').click()`);
   const compact = await evaluate(`(() => {
@@ -104,6 +106,15 @@ try {
     return {before,top:document.getElementById('page-status-top').textContent,bottom:document.getElementById('page-status').textContent,current:document.querySelector('#pagination [aria-current]').textContent};
   })()`);
   assert.equal(paginationChecks.before,true);assert.equal(paginationChecks.top,paginationChecks.bottom);assert.equal(paginationChecks.current,'3');
+  assert.equal(await evaluate('document.querySelectorAll(".link-row").length'),10);
+  const sticky = await evaluate(`(async () => {
+    const bar=document.getElementById('pagination-toolbar');
+    window.scrollTo(0,bar.getBoundingClientRect().top+window.scrollY+300);
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const rect=bar.getBoundingClientRect();
+    return {position:getComputedStyle(bar).position,top:rect.top,bottom:rect.bottom,height:innerHeight};
+  })()`);
+  assert.equal(sticky.position,'sticky');assert.ok(sticky.top >= -1 && sticky.top <= 1);assert.ok(sticky.bottom < sticky.height);
   const htmlChecks = await evaluate(`(async () => {
     const {importHTML}=await import('/import.js');
     const result=importHTML('<a href="javascript:alert(1)">Bad</a><a href="https://example.xyz/x">Good</a><script>https://noise.example</script>');

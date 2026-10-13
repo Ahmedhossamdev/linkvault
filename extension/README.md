@@ -6,7 +6,7 @@ Keep shared links in a local reading library, track reading progress, and export
 
 ## Release status and browsers
 
-Version 0.3.0 is a pre-release for manual testing, not a browser-store release. Browser-specific release results have not been recorded yet.
+Version 0.3.1 is a pre-release for manual testing, not a browser-store release. Browser-specific release results have not been recorded yet.
 
 | Browser | Extensions page | Status |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ LinkedIn's [Download your data](https://www.linkedin.com/help/linkedin/answer/a1
 
 **All chats** is the general reading list. Shared URLs appear once with their originating chats and one reading state. Filter independently by chat, subject topic, site, reading state, or search. Local suggestions cover programming and broader subjects such as science, books, health, finance, travel, food, art, and music. Suggestions are imperfect: enter custom topics in Edit title & topic. Edited topics survive enrichment and backup restoration. YouTube and GitHub are site filters, not subject topics. There is no AI labeling.
 
-The interface uses a paper-like light theme and neutral dark theme, local system fonts, serif titles, and visible monospace URLs. Use the header's sun/moon button to switch themes; your choice is remembered. Compact titles show at most two lines, with full titles retained in the editor and hover tooltip. Footer links point to Ahmed's blog, GitHub, LinkedIn, and Buy Me a Coffee. **Collect links** opens the separate Collect tab. Guide contains permanent instructions and a replayable walkthrough.
+The interface uses a paper-like light theme and neutral dark theme, local system fonts, serif titles, and visible monospace URLs. Use the header's sun/moon button to switch themes; your choice is remembered. Compact titles show at most two lines, with full titles retained in the editor and hover tooltip. Footer links point to Ahmed's blog, GitHub, and LinkedIn. Buy Me a Coffee is in the header. **Collect links** opens the separate Collect tab. Guide contains permanent instructions and a replayable walkthrough.
 
 The folded-page icon and bookmark cutout are LinkVault's own mark. Browser icons are packaged at 16, 32, 48, and 128 pixels. See the [identity guide](../brand/IDENTITY.md) for artwork and usage.
 
@@ -75,7 +75,7 @@ Reports shows current To read, Reading, Read, and Archived counts across the who
 
 Open **Export & backup** for downloads. Its summary shows how many links Markdown will export from your current reading-list filters, and how many links the full JSON backup contains. Switching tabs preserves filters. Pagination appears above and below the links; both controls share the same page and page size.
 
-The list renders 25 links per page by default, with 50 and 100 also available. Compact page controls show the current range and support keyboard navigation. Changing a filter or page size returns to page one. Reading states persist across pages. Markdown and optional title fetching operate on the full filtered list, not only the visible page; a JSON backup always includes the full library.
+The list renders 10 links per page by default, with 25, 50, and 100 also available. The compact top pagination bar stays visible while you scroll through links; bottom controls share its page and size. Changing a filter or size returns to page one. Reading states persist across pages. Markdown and title fetching operate on the full filtered list, not only the visible page; JSON always backs up the full library. Buy Me a Coffee is in the header, alongside collection and theme controls.
 
 - **To read**, **Reading**, **Read**, and **Archived** are explicit, editable states. Opening a page does not claim you have read it. **Active** hides archived links; **Archived** and **Everything** let you find and restore them.
 - **Delete** removes a link from all chat views. Deleted URLs are excluded from future collection and backup imports. **Undo last deletion** restores its state and chat memberships until you close the dashboard or delete another link. Archive a link instead if you might want it later.

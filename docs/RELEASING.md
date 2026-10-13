@@ -1,6 +1,6 @@
 # Manual testing and release checklist
 
-Extension 0.3.0 is a testing candidate, not a store release.
+Extension 0.3.1 is a testing candidate, not a store release.
 
 ## Browser results
 
@@ -28,7 +28,7 @@ Install unpacked in a fresh Chrome test profile. Import synthetic TXT links, mar
 | Shared links | Same URL in two chats | One overall entry with both origins and shared state |
 | Reading | Open new link, then check it | Only explicit marking changes it to Read |
 | Compact rows | Long title and URL | Two visible title lines; full editable title; visible URL |
-| Pagination | More than 100 links | Top/bottom controls share page and size; filters reset page; exports include all filtered pages |
+| Pagination | More than 100 links | Ten rows by default; top bar remains visible while scrolling; top/bottom controls share page and size; exports include all filtered pages |
 | Export tab | Filter reading list; switch to Export & backup | Summary matches filters; Markdown includes all filtered pages; JSON includes whole library |
 | Theme / layout | Light, dark, keyboard, narrow window | No overlap or horizontal overflow; usable focus |
 | Reports | Change states and delete | Correct current counts; shared links count once overall |
@@ -54,7 +54,7 @@ Skip live cases if you do not accept the platform risk, and record Not tested. N
 
 ## Release package
 
-Run `python scripts/package_extension.py` from the root. It creates `dist/linkvault-chromium-0.3.0.zip` and prints its SHA256. Existing outputs are not overwritten: use `--output /path/to/a/new-name.zip` for another candidate. Extract the ZIP to a new folder and load that folder unpacked for manual testing.
+Run `python scripts/package_extension.py` from the root. It creates `dist/linkvault-chromium-0.3.1.zip` and prints its SHA256. Existing outputs are not overwritten: use `--output /path/to/a/new-name.zip` for another candidate. Extract the ZIP to a new folder and load that folder unpacked for manual testing.
 
 Use the [synthetic examples](../examples/README.md) when testing without private chat data. The release status and remaining checks are recorded in [RELEASE_STATUS.md](RELEASE_STATUS.md).
 
