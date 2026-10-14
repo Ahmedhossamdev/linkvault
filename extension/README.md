@@ -1,158 +1,165 @@
 # LinkVault browser extension
 
-Your friends send you articles. You send back "I'll read this later." Later needs somewhere to live.
+Friends send you articles. You say "I will read this later." This tool gives "later" a home.
 
-Keep shared links in a local reading library, track reading progress, and export Markdown for Obsidian. This is a dependency-free Manifest V3 extension. Python is not required. No promise that installing it will make you read everything.
+Save links from chats on your own computer. Track what you read. Export to Markdown for Obsidian. No extra installs. No Python needed. It will not make you read everything, but it will keep the links safe.
 
 ## Release status and browsers
 
-Version 1.0.0 is the first GitHub release for manual testing, not a browser-store release. Synthetic Chromium fixture checks pass; they do not establish live LinkedIn compatibility or support in every browser.
+Version 1.0.0 is for hand testing from GitHub. It is not in any browser store yet. Lab tests pass in Chromium, but that does not mean it works with live LinkedIn in all browsers.
 
 | Browser | Extensions page | Status |
 | --- | --- | --- |
-| Chrome | `chrome://extensions` | Primary target; manual release checks pending |
-| Edge | `edge://extensions` | Chromium test target; unverified |
-| Brave | `brave://extensions` | Chromium test target; unverified |
-| Opera / Opera GX | `opera://extensions` | Chromium test target; unverified |
-| Firefox | No compatible package | Port and testing required |
-| Safari / mobile | No package | Not supported |
+| Chrome | `chrome://extensions` | Main target, hand tests still pending |
+| Edge | `edge://extensions` | Should work, not verified |
+| Brave | `brave://extensions` | Should work, not verified |
+| Opera / Opera GX | `opera://extensions` | Should work, not verified |
+| Firefox | No working package | Needs extra work and testing |
+| Safari / phones | No package | Not supported |
 
-Chromium architecture does not prove compatibility with every browser. See the official guides for [Edge sideloading](https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading), [Brave extensions](https://support.brave.com/hc/en-us/articles/360017909112-How-can-I-add-extensions-to-Brave), and [Opera testing](https://help.opera.com/en/extensions/testing/).
+Chrome code does not prove other browsers work. See the official guides for [Edge sideloading](https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/getting-started/extension-sideloading), [Brave extensions](https://support.brave.com/hc/en-us/articles/360017909112-How-can-I-add-extensions-to-Brave), and [Opera testing](https://help.opera.com/en/extensions/testing/).
 
-Firefox is not supported by the current manifest, which declares a Chrome background service worker. Mozilla's [Manifest V3 migration guide](https://extensionworkshop.com/documentation/develop/manifest-v3-migration-guide/) describes its event-page background model. A Firefox release needs a compatible manifest, API and permission checks, persistence tests, packaging, and signing. Renaming this package to an XPI is not a Firefox port.
+Firefox needs a new manifest, new permission checks, and full testing. Just renaming this file does not make it work in Firefox. See Mozilla's [Manifest V3 guide](https://extensionworkshop.com/documentation/develop/manifest-v3-migration-guide/).
 
-## Install locally
+## Install by hand
 
-1. Open your browser's extensions page from the table above.
-2. Enable Developer mode.
-3. Choose **Load unpacked** and select this `extension` directory.
-4. Pin LinkVault to the toolbar and click its icon. Follow the first-open walkthrough, or skip it and replay it later from Help.
+1. Open your browser extensions page from the table above.
+2. Turn on Developer mode.
+3. Click **Load unpacked** and pick this `extension` folder.
+4. Pin LinkVault to the toolbar and click it. Follow the short tour, or skip it and replay it later from Help.
 
-This version targets Chrome and Chromium version 123 or newer. Firefox packaging has not been implemented or verified. No store publication is included.
+You need Chrome or Chromium 123 or newer. There is no store version.
 
-After updating the extension files, click **Reload** on its card in `chrome://extensions`, refresh the LinkedIn conversation tab, and open LinkVault again. Refreshing replaces any collector code already injected into that page.
+If you change the files, click **Reload** on the extension card in `chrome://extensions`, refresh the LinkedIn chat tab, and open LinkVault again.
 
-## Choose a collection method
+## How to save links
 
-### Live collection
+You have two ways: live collect from LinkedIn, or import a file. File import is the safe way.
 
-Open a conversation on LinkedIn's full messaging page and click the LinkVault toolbar icon. A separate dashboard opens and remains connected to the original LinkedIn tab. Open **Collect** and optionally enter a chat name. Existing threads reuse their saved chat. Rename one by selecting it in the sidebar. **Return to LinkedIn conversation** takes you back to the source. Manual activates the source only after successful startup; automatic activates it before detecting scrolling. The full messaging conversation takes precedence over floating chats; close extra chats when they are ambiguous. Acknowledge the risk notice and choose:
+### Live collect from LinkedIn
 
-- **Manual:** scroll the conversation yourself while LinkVault collects links from loaded messages.
-- **Automatic:** LinkVault scrolls toward older messages immediately, then every 0.75 seconds by default. Choose **Gentle** for a two-second interval on slower connections. Each step overlaps the previous viewport to retain links from virtualized messages. Standard and reversed message lists are supported. The 30-second idle pause and ten-minute limit are based on elapsed time and remain unchanged at either speed. Press **Stop** in the dashboard at any time.
+Open a chat on the full LinkedIn messages page. Click the LinkVault icon. A new LinkVault window opens. It stays linked to the LinkedIn tab. Open **Collect** and type a chat name if you want. Old chats are reused. You can rename a chat in the side bar. **Return to LinkedIn conversation** takes you back.
 
-Links are captured incrementally, including before old messages disappear from a virtualized message list. Leaving the source conversation, closing its tab, or closing the dashboard stops collection. Restarting merges links into the saved collection. Stop collection before editing or exporting.
+Close extra small chat popups. Use the full messages page. Then read the risk note and pick:
 
-A small LinkVault panel appears at the bottom-left of the LinkedIn tab while collecting. It shows elapsed time, acknowledged saved-link counts for the whole collection, and successful scroll steps for the current session. Its activity state distinguishes scrolling, waiting for older messages, manual watching, saving, paused, and interrupted collection. Press **Stop collection** directly in this panel. When stopped, the elapsed timer freezes and the panel remains until you dismiss it. The dashboard shows the same session progress. It does not estimate completion percentages or remaining time because the total history is unknown.
+* **Manual:** you scroll up yourself. LinkVault saves links from what you load.
+* **Auto:** LinkVault scrolls up for you. Normal speed is every 0.75 seconds. **Gentle** is every 2 seconds for slow nets. It stops after 30 seconds with no new messages, or after 10 minutes max. Press **Stop** any time.
 
-**Stop** flushes links from the currently loaded messages to local storage before acknowledging the stop. Closing a tab or the browser unexpectedly retains already-saved links but may lose the latest unsaved batch. Reopening LinkVault restores the saved collection. Start again to collect more links and merge duplicates; LinkVault does not restore an exact scroll checkpoint.
+What to know:
 
-Neither mode guarantees complete history. A slow connection, browser timer throttling, or changed LinkedIn markup can stop collection early. Sender and date fields are best-effort and may be missing. Keep the source tab open, review the collection, and retry if needed.
+* Links save as you go, even if old messages vanish from view.
+* If you leave the chat, close the tab, or close LinkVault, saving stops. Start again to save more. Old links stay, new links are added.
+* Stop saving before you edit or export.
+* A small panel shows at the bottom left of LinkedIn while saving. It shows time, saved links, and scroll steps. You can press **Stop collection** there too. It does not show percent or time left, because we do not know how big your chat is.
+* **Stop** first saves what is on screen, then stops. If the browser crashes, saved links stay, but the last small batch may be lost.
+* No mode saves full history every time. Slow net, paused tabs, or LinkedIn changes can stop it early. Sender and date may be missing. Keep the tab open, check the result, and try again if needed.
+* If the page does not move, open the dashboard and click **Show scrolling diagnostics**. It shows mode, message counts, and scroll numbers. It has no message text or links. Copy it when you report a bug.
 
-If the page does not move, return to the dashboard and check its status. **Show scrolling diagnostics** displays the active mode, running state, detected message counts, container dimensions, overflow settings, and the last requested and actual scroll positions. It excludes message text and URLs. Copy these diagnostics when reporting a scrolling bug. If a container rejects scrolling, collection pauses with an explicit error instead of claiming that history is loading.
+**Account risk:** LinkedIn [does not allow tools that scrape or auto scroll](https://www.linkedin.com/help/linkedin/answer/a1341387). Both live modes can break its rules. Manual scroll, your own chats, or slow delays do not keep you safe. LinkVault does not skip limits or hide from LinkedIn. It is not approved by LinkedIn.
 
-**Account risk:** LinkedIn [prohibits extensions that scrape or automate activity](https://www.linkedin.com/help/linkedin/answer/a1341387). Both live modes may violate its rules. Manual scrolling, collecting your own conversation, or adding delays does not guarantee protection from restrictions. LinkVault makes no claim that live collection is approved or ban-proof. It does not bypass rate limits, login challenges, or detection.
+### File import (safe)
 
-### File import
+Use **Collect** for saved chat HTML or TXT link lists. Use **Backup and restore** for LinkVault JSON backups or Markdown files. After import, LinkVault opens Reading list so you can see the result. Old links stay, new links are added. File import never touches LinkedIn.
 
-Use **Collect** for saved chat HTML or TXT link lists. Use **Backup & restore** for LinkVault JSON backups or Markdown. After a successful import, LinkVault opens Reading list with filters reset so you can see the result. Existing links are merged, not replaced. File import does not connect to LinkedIn or inject anything into its page.
+HTML import first looks for LinkedIn message text. If it is missing, it takes other links from the page and warns you. Check and remove bad links. LinkedIn archive ZIP or CSV import is not ready yet.
 
-HTML extraction prefers LinkedIn message bodies. When their markup is missing, it falls back to candidate links from the page and warns you. Review the result to remove unrelated links. LinkedIn archive ZIP/CSV import is not implemented.
+### Bring back JSON or Markdown
 
-### Restore JSON or Markdown
+In **Backup and restore**, pick a `.json`, `.md`, or `.markdown` file.
 
-In **Backup & restore**, choose a `.json`, `.md`, or `.markdown` file. Version 2 JSON keeps original chat membership, reading states, aliases, edits, message context, and deletion exclusions. Old version 1 backups restore their link collections. Existing local reading progress wins on duplicates. Invalid files and failed writes leave the current library unchanged.
+* JSON version 2 keeps chats, reading states, name changes, edits, message text, and deleted link rules. Old version 1 files still load their links. Your current reading state wins if the same link is in both.
+* Markdown loads web links and headings. The first big title becomes the list name. Smaller titles become topics. You can change the name before you pick the file. New links from Markdown start as **To read**. Markdown cannot bring back chat names, aliases, history, or private text. Use JSON for a full restore.
+* Bad files change nothing. Your current list stays safe.
 
-Markdown imports HTTP/HTTPS inline links, autolinks, and reference links. The first H1 supplies a collection name and H2 headings supply topics. You can override the name before choosing the file. Escaped titles, URL parentheses, decimal/hex numeric references, and common semicolon-terminated named references such as `&amp;` are supported. Unknown named references and percent escapes remain literal. Export uses angle-bracket destinations so parentheses do not create different URL identities on reimport. Images, code, unused reference definitions, and nested exported context are ignored; HTML is not rendered or executed. Bare URLs in prose are not treated as Markdown links: use TXT for a plain URL list.
+Markdown export uses `<...>` links so brackets in URLs still match on reimport. Pictures, code blocks, and plain URLs in text are skipped. Use TXT for a plain URL list.
 
-New Markdown links start **To read**, even if exported titles contain `(Read)` or a Markdown checkbox is checked. Existing shared links keep their current state. Markdown cannot recover original multi-chat membership, aliases, reading history, or private context. Use JSON for full-fidelity restoration.
+### If the LinkedIn tab is lost
 
-### Source tab recovery
+Always start LinkVault by clicking its icon while the LinkedIn chat tab is open. If you restarted Chrome, the old dashboard may point to a closed tab. Open the chat and click the icon again. You will see how to reconnect. Clicking the icon while on LinkVault does not switch chats by itself.
 
-Launch LinkVault by clicking its toolbar icon while the full LinkedIn conversation tab is active. A dashboard restored after restarting Chrome may retain an obsolete tab ID. Open your conversation and launch from that tab again. Start, Return to conversation, and diagnostics now show reconnection instructions rather than a raw missing-tab error. Clicking the toolbar while already on LinkVault keeps the dashboard and its current connection; it does not reconnect to another chat automatically.
+### LinkedIn data download
 
-### Official message archive
+LinkedIn lets you download your messages in **Settings and Privacy > Data Privacy > Download your data**. See [Download your data](https://www.linkedin.com/help/linkedin/answer/a1339364/down-your-account-data). It can take up to 48 hours. LinkVault cannot read that ZIP or CSV yet.
 
-LinkedIn's [Download your data](https://www.linkedin.com/help/linkedin/answer/a1339364/down-your-account-data) documentation lists Messages as including sent, received, and archived message content and dates, with availability within 48 hours. Request it through **Settings & Privacy > Data Privacy > Download your data**, using the larger archive if Messages is not available as a separate category. Processing an exported archive would avoid scrolling through the browser's message history. Archive ZIP/CSV import and conversation selection are not implemented in this extension yet.
+## Reading list
 
-## Reading library
+**All chats** shows everything. Each link shows once, with its chats and its reading state. You can filter by chat, topic, website, reading state, or search text. Topic hints cover code and common topics like science, books, health, money, travel, food, art, and music. Hints can be wrong. Type your own topic in Edit title and topic. Your edits stay after title updates and backups. YouTube and GitHub are website filters, not topics. There is no AI tagging.
 
-**All chats** is the general reading list. Shared URLs appear once with their originating chats and one reading state. Filter independently by chat, subject topic, site, reading state, or search. Local suggestions cover programming and broader subjects such as science, books, health, finance, travel, food, art, and music. Suggestions are imperfect: enter custom topics in Edit title & topic. Edited topics survive enrichment and backup restoration. YouTube and GitHub are site filters, not subject topics. There is no AI labeling.
+Light and dark modes are both supported. Main pages are **Reading list**, **Collect**, **Backup and restore**, and **Reports**. Help has guides and the replayable tour. Each page starts at the top. Small chips show which filters are on. You can remove them. Buy Me a Coffee and theme switch stay in the top bar.
 
-The warm editorial interface uses paper panels, rust accents, compact serif link cards, and readable URLs. Site badges are generated locally, with no favicon or image requests. Subtle sage and warm reading-state accents distinguish Read and Reading. Both light and dark modes are supported. Main navigation is **Reading list**, **Collect**, **Backup & restore**, and **Reports**; Help contains instructions and the replayable walkthrough. Switching sections starts at the top. Current scope and removable filter chips show why links are included. Topic/site filters are expandable, and chat renaming appears only when a chat is selected. Buy Me a Coffee and theme switching remain in the header.
+Chat tools:
 
-Use **Chat settings** to rename or delete the selected chat. Deleting a chat removes its private links and captured context, but keeps links shared with another chat. Add custom topics in the Topics panel and assign one from a link's **Edit title & topic** menu. Custom topics remain in JSON backups even when empty. Deleting a custom topic moves its links to Unsorted instead of deleting them. Built-in topic suggestions remain available.
+* Use **Chat settings** to rename or delete the picked chat. Delete removes its private links, but keeps links that are also in another chat.
+* Add your own topics in the Topics panel. Assign one from a link's **Edit title and topic** menu. Empty custom topics stay in JSON backups. If you delete a custom topic, its links move to Unsorted.
 
-The folded-page icon and bookmark cutout are LinkVault's own mark. Browser icons are packaged at 16, 32, 48, and 128 pixels. See the [identity guide](../brand/IDENTITY.md) for artwork and usage.
+Reports shows counts for To read, Reading, Read, and Archived, by chat and by topic. Shared links count once in total and once per chat. Deleted links do not count. Archived means hidden, not read. No dates, streaks, or totals over time.
 
-Reports shows current To read, Reading, Read, and Archived counts across the whole library, with chat and topic breakdowns. Shared links count once overall and once in each originating chat. Deleted links do not count. Archived is a separate state, not evidence of reading. Dates, streaks, lifetime totals, and verified reading are not tracked.
+The list shows 10 links per page. You can pick 25, 50, or 100. Page buttons show on top and bottom and stay in sync. New filters go back to page one. Title fetch and Markdown export use the full filtered list, not just the page you see. JSON backup always saves everything.
 
-Open **Backup & restore** for imports and downloads. Its summary shows the filtered Markdown count and full JSON count. Switching tabs preserves filters. Pagination appears above and below links with a shared page and size.
+Link states:
 
-The list renders 10 links per page by default, with 25, 50, and 100 also available. The compact top pagination bar stays visible while you scroll through links; bottom controls share its page and size. Changing a filter or size returns to page one. Reading states persist across pages. Markdown and title fetching operate on the full filtered list, not only the visible page; JSON always backs up the full library. Buy Me a Coffee is in the header, alongside collection and theme controls.
-
-- **To read**, **Reading**, **Read**, and **Archived** are explicit, editable states. Opening a page does not claim you have read it. **Active** hides archived links; **Archived** and **Everything** let you find and restore them.
-- **Delete** removes a link from all chat views. Deleted URLs are excluded from future collection and backup imports. **Undo last deletion** restores its state and chat memberships until you close the dashboard or delete another link. Archive a link instead if you might want it later.
-- Edit titles and topics under each link's metadata control. A link's checkbox means **Read**: new links are unchecked, checking marks a link Read, and unchecking resets it to To read. Reading and Archived remain unchecked. This reading state is shared across chat views. Checkboxes are not export selection controls.
+* **To read**, **Reading**, **Read**, and **Archived** are set by you. Opening a page does not mark it read. **Active** hides archived links. **Archived** and **Everything** show them again so you can restore.
+* **Delete** removes a link from all chats. Deleted links are skipped in future imports. **Undo last deletion** brings it back until you close the window or delete another link. Archive instead if you may want it later.
+* The checkbox means **Read**. New links are unchecked. Check to mark Read. Uncheck to go back to To read. The state is the same in all chats. The checkbox does not pick links for export.
 
 ### Delete all links
 
-In **Backup & restore**, expand **Delete all links**. The confirmation shows the full-library count, not the filtered count, and offers a JSON backup first. Type `DELETE` to enable the final action. It removes saved links, reading states, captured message context, deletion exclusions, and the retained legacy collection snapshot. Chat collections and preferences stay.
+In **Backup and restore**, open **Delete all links**. It shows the full count, not the filtered count. Back up to JSON first. Type `DELETE` to unlock the button. It removes links, states, message text, and deleted link rules. Chats and settings stay.
 
-There is no bulk Undo. Import a saved JSON backup to restore the removed links; ordinary single-link Delete still has its session Undo. Clearing exclusions allows links to be imported again. Failed storage writes leave the previous library intact. This action is disabled during live collection and invalidates finished capture sessions so delayed packets cannot repopulate it. It does not erase previously downloaded backups or promise physical secure erasure of browser storage.
+There is no Undo for this. Load your JSON backup to bring links back. Single Delete still has Undo. This button is off during live collect. It does not delete files you already downloaded. It does not fully wipe browser storage.
 
-URLs are deduplicated with tracking parameters removed. Case-sensitive paths, meaningful query parameters, and fragments are preserved. LinkedIn post links are retained; profile and navigation links are filtered out. Different short URLs pointing to the same destination can remain separate until you resolve them with optional enrichment. Resolving a URL into an existing item merges its chat memberships and context, preserving that destination item's reading state. Resolved short URLs are retained as aliases, so recapture does not create an unread duplicate. Aliases travel in backups and are excluded when deleting their article. Resolving to a deleted destination removes the short-link entry instead of resurrecting that article.
+LinkVault removes tracking parts from URLs to find dupes. It keeps case, useful query parts, and page anchors. LinkedIn post links stay. Profile and menu links are skipped. Two short links to the same page may stay split until you resolve them. Resolve merges chats and keeps the reading state of the main link. Short links stay as aliases so they do not come back as new. Aliases are in backups. If the main link was deleted, resolving removes the short link too.
 
-## Storage, backups, and moving browsers
+## Save, back up, move
 
-The simplest architecture is local-first: no sign-in, hosted database, automatic cloud sync, or LinkVault account. One version 2 library is stored in `chrome.storage.local`, on your device inside the current browser profile. It persists across browser restarts, but is not a file in your Documents folder and does not sync through your browser account. Different profiles and browsers have separate libraries.
+Local first: no login, no cloud, no LinkVault account. One list lives in `chrome.storage.local` in the current browser profile. It stays after restart. It does not sync to other profiles or computers. Each profile has its own list.
 
-- **Download Markdown:** all pages of the current filtered view, grouped by subject topic and annotated with reading states. Read and unread links are both exported. Save the `.md` file inside your Obsidian vault. Context is excluded unless you enable it. Markdown is not a full-fidelity backup.
-- **Back up full library (JSON):** all chats, links, URL aliases, categories, reading states, captured message context, legacy selections, and deleted-URL exclusions, regardless of the current filters. Store it wherever you keep your personal backups.
-- **Move to another browser or computer:** download the JSON backup, install LinkVault in a supported Chromium browser, and import that file. An empty library restores all exported data. Importing into an existing library merges URLs and chat memberships, keeping the current local reading state and deletion exclusions when they conflict. There is no automatic two-way synchronization.
+* **Download Markdown:** saves the current filtered view, grouped by topic, with reading states. Save the `.md` file in your Obsidian vault. Message text is off unless you turn it on. This is not a full backup.
+* **Back up full library (JSON):** saves chats, links, aliases, topics, states, message text, and deleted link rules, no matter the filters. Keep it where you keep backups.
+* **Move to a new browser or computer:** download JSON, install LinkVault there, and import the file. Empty lists restore everything. Import to a used list merges links and chats, and keeps your current reading state when both differ. There is no auto sync.
 
-Uninstalling the extension or clearing its browser data can erase the library. Back up before doing either. Backups are not encrypted and may contain private messages. Local storage also has a browser-managed quota; if saving fails, the dashboard reports an error and the collector stops rather than acknowledging an unsaved batch. Export a backup promptly if you see a storage error.
+If you remove the extension or clear its data, the list can be gone. Back up first. Backups are plain text and may hold private messages. If saving fails from lack of space, LinkVault shows an error and stops saving. Back up right away if you see this.
 
-Previous version 1 collections migrate automatically into a chat named after the collection, without losing title edits, selections, or captured context. The old storage snapshot is retained for recovery, so library deletion is not secure erasure of that legacy snapshot or previously downloaded files. Clearing the extension's browser data removes its local snapshots. Invalid saved libraries are not silently replaced. Clicking the toolbar opens a fresh dashboard and closes the previous one; the library remains.
+Old version 1 lists move by themselves into a chat named after the list. Title edits and message text stay. The old copy stays for safety. Clearing browser data removes it. Bad saved data is never silently replaced. Clicking the icon opens a new window and closes the old one. The list stays.
 
-Automatic file backup and cloud sync are not implemented. Chrome/Chromium is the current target; the browser table distinguishes test targets from verified release results. A portable backup format does not imply Firefox packaging is ready.
+Auto backup and cloud sync are not built in. A portable backup does not mean Firefox is ready.
 
-## Optional enrichment
+## Get titles (optional)
 
-**Fetch titles for filtered list** requests HTTPS site access, then visits URLs across all pages of the current filtered list without login cookies. It can resolve `lnkd.in` interstitial links and ordinary redirects. Links behind authentication or unavailable sites are retained. Requests have a twenty-second timeout and a bounded response size. Requests run sequentially; a large collection can take time. Leave the dashboard open until it finishes. Current topic suggestions are refreshed from fetched titles.
+**Fetch titles for filtered list** asks for web access, then visits each link in the filtered list with no login. It can fix `lnkd.in` links and normal redirects. Locked pages stay with no title. Each page has a 20 second limit and a size limit. It goes one by one, so big lists take time. Keep the window open till it ends. Topic hints refresh from new titles.
 
-This action contacts the filtered websites. It is optional; capture, local keyword labeling, and export work without it. HTTP public URLs are not granted access by this feature.
+This calls the websites in your list. It is optional. Saving, tagging by hand, and export work without it. Plain `http://` pages are not fetched.
 
-## Organize the Markdown with AI
+## Use AI with your Markdown
 
-Download the Markdown collection and open it in Obsidian, or give it to your preferred AI tool to suggest topics, tags, summaries, or a reading plan. The extension does not include an AI integration or ask for an API key.
+Download Markdown and open it in Obsidian, or give it to your own AI tool for tags, groups, or a reading plan. LinkVault has no AI inside and needs no API key.
 
-For example, use this prompt with your exported file:
+Try this prompt with your exported file:
 
 > Group these links by topic and suggest Obsidian tags. Keep every original URL unchanged. Return Markdown, and do not invent summaries for pages you have not read.
 
-Review the results before replacing your notes. Message context is excluded from Markdown by default. If you included it, review the file before sharing it with an external AI service.
+Check the AI output before you keep it. Message text is off in Markdown by default. If you turned it on, check the file before you share it with any AI service.
 
-## Privacy and permissions
+## Privacy and access
 
-- `activeTab` and `scripting`: inject the collector into the tab where you invoked the toolbar action, only when you start collection.
-- `storage`: retain the library on your device in this browser profile. This is not encrypted storage. Clear the extension's browser data when you no longer want its stored context or migration snapshot saved.
-- Optional HTTPS host permissions: requested for title fetching. Capture itself does not call hidden LinkedIn APIs or read cookies.
+* `activeTab` and `scripting`: adds the saver to the LinkedIn tab you clicked, only when you start saving.
+* `storage`: keeps the list on your device in this browser profile. It is not encrypted. Clear the extension data when you no longer want message text saved.
+* Optional web access: only for title fetch. Saving itself does not call hidden LinkedIn APIs or read cookies.
 
-No analytics, remote extension code, accounts, or LinkVault server. Exports may contain private conversation information. Avoid committing real chats, backups, or browser profiles to the repository.
+No stats, no remote code, no accounts, no LinkVault server. Exports may hold private chat text. Do not commit real chats, backups, or browser profiles to git.
 
-## Development and verification
+## Build and test
 
-Run `npm test` inside this directory with Node 24 or newer. Tests use Node's built-in test runner with `--test-isolation=none`. There is no build step or runtime dependency.
+Run `npm test` in this folder with Node 24 or newer. Tests use the built in Node test runner with `--test-isolation=none`. No build step. No extra installs.
 
-Browser fixture tests can be run with `node tests/browser.mjs`; set `LINKVAULT_BROWSER` to a Chromium or Chromium headless-shell executable if `chromium` is not on your PATH. These use synthetic conversations and a browser API shim, not your LinkedIn account. They cannot prove compatibility with live LinkedIn or eliminate account risk.
+Browser fake tests run with `node tests/browser.mjs`. Set `LINKVAULT_BROWSER` to your Chromium file if `chromium` is not on your PATH. These use fake chats, not your LinkedIn account. They cannot prove live LinkedIn works and they do not remove account risk.
 
-Before releasing, follow the [manual test and release checklist](../docs/RELEASING.md) and record browser versions and actual results. Live testing is optional and carries account risk. Live selectors need maintenance when LinkedIn changes its page. See [privacy](../PRIVACY.md), [contributing](../CONTRIBUTING.md), and [security reports](../SECURITY.md).
+Before you release, follow the [hand test checklist](../docs/RELEASING.md) and write down browser versions and results. Live tests are optional and risky. LinkedIn page changes may break the saver. See [privacy](../PRIVACY.md), [contributing](../CONTRIBUTING.md), and [security](../SECURITY.md).
 
-Create a Chromium testing ZIP from the repository root with `python scripts/package_extension.py` (Python 3.10+). The script uses an explicit runtime allowlist, rejects symlinked sources, and refuses to overwrite an existing output. It prints the ZIP's SHA256. Extract the ZIP into a new directory and load that directory unpacked. It is not a Firefox package or proof of store approval.
+Make a Chromium test ZIP from the repo root with `python scripts/package_extension.py` (Python 3.10+). It uses a fixed file list, blocks links to outside files, will not overwrite an old ZIP, and prints the file hash. Unzip to a new folder and load that folder unpacked. It is not a Firefox file and it is not store approval.
 
-Synthetic import files are available in [examples](../examples/README.md). The GitHub workflow runs extension tests, Python tests, and packaging after this source is uploaded. A workflow file on disk is not a successful CI run.
+Fake import files are in [examples](../examples/README.md). GitHub runs extension tests, Python tests, and packing after upload. A workflow file on disk is not proof that CI passed.
 
 ## License
 
-MIT, under the included [LICENSE](LICENSE). This directory can be distributed separately from the Python project.
+MIT, see [LICENSE](LICENSE). This folder can be shared on its own, apart from the Python tool.

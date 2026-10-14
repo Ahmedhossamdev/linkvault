@@ -5,33 +5,85 @@
   <img src="brand/wordmark-light.png" alt="LinkVault" width="360">
 </picture>
 
-Give ‘read later’ a home.
+Save links from LinkedIn chats in one place. Read them later.
 
-The [identity guide](brand/IDENTITY.md) includes the folded-page mark, light/dark wordmarks, palette, and reusable [launch artwork](brand/launch-card.png).
+Friends send you many links. You say "I will read this later" and then lose the link. LinkVault saves those links so you can find them again.
 
-Your friends send you useful links. You promise to read them. LinkVault gives those promises a reading list.
+## What is this?
 
-Pre-release: local browser installation only. No browser-store release has been published from this checkout.
+LinkVault is a small browser tool for saving links from chats.
 
-## Browser extension
+* It saves links from your LinkedIn chats.
+* It keeps them in one reading list on your own computer.
+* You can mark links as To read, Reading, Read, or Archived.
+* You can search, filter by chat or topic, and export to Markdown.
+* No account. No cloud. Your links stay in your browser.
 
-Start with the [installation and browser table](extension/README.md#release-status-and-browsers). Chrome/Chromium is the current target. Edge, Brave, and Opera are manual-test targets, not verified support claims. Firefox requires a separate port and package.
+You do not need Python to use LinkVault. The browser extension is the main tool.
 
-The extension now has independent topic/site filters, reports, a first-open walkthrough, and a sun/moon theme toggle. See the [manual release checklist](docs/RELEASING.md), [privacy details](PRIVACY.md), and [contribution guide](CONTRIBUTING.md).
+> Note: you must install it by hand in your browser. It is not in the Chrome Web Store yet.
 
-Backup & restore groups JSON/Markdown imports with downloads. JSON preserves the full library; Markdown restores links, titles, and topics with new items To read. A confirmed Delete all links action clears saved links across chats while keeping chat metadata and preferences. Reading filters are removable, and Help is separate from the four main sections.
+Start here: [how to install and which browsers work](extension/README.md#release-status-and-browsers).
 
-LinkedIn prohibits scraping and automation extensions. Both live collection modes carry account risk; manual scrolling and delays do not make them ban-proof. File import does not interact with LinkedIn. Read the [risk explanation](extension/README.md#choose-a-collection-method) before live collection. LinkVault is not affiliated with LinkedIn.
+## What can it do?
 
-The [extension](extension/README.md) combines links across chats with subject/site filters, reading states, archiving, deletion with undo, file import, optional title fetching, and Markdown export. Live collection offers manual and automatic modes with account-risk warnings. Full JSON backups move your library between compatible profiles without an account. Python is not required. Use exported Markdown with your own AI tool separately if you want; there is no built-in model integration.
+* Save links from many chats in one list.
+* Filter by chat, topic, website (like YouTube or GitHub), or reading state.
+* Edit titles and topics.
+* Delete a link, with Undo if you made a mistake.
+* Import links from a saved HTML or TXT file.
+* Get page titles if you want (optional).
+* Export your list to Markdown for Obsidian.
+* Back up your full list to JSON and move it to another browser.
+* Light mode and dark mode.
+* Help page and short tour on first open.
 
-You and a friend share hundreds of article links on LinkedIn, WhatsApp, Telegram. LinkedIn's [official data export](https://www.linkedin.com/help/linkedin/answer/a1339364/down-your-account-data) includes sent, received, and archived messages. This project's current import flow uses saved chat HTML; LinkedIn archive ZIP/CSV import is not implemented yet. The Python tool extracts links, resolves `lnkd.in` short links, fetches titles, labels by topic (`db`, `os-linux`, `system-design`, ...), and writes a `collection.md` plus optional Obsidian notes.
+See the [full extension guide](extension/README.md), [privacy details](PRIVACY.md), and [how to help](CONTRIBUTING.md).
 
-Stdlib only. No dependencies. Python 3.10+.
+## Important: please read before you collect from LinkedIn
 
-## How it works
+LinkedIn does not allow tools that scrape or auto scroll chats. LinkVault has two live modes:
 
-The sections below describe the original Python tool, not the browser reading library. WhatsApp and Telegram-specific extraction is unverified; generic HTML extraction does not establish full support.
+* **Manual:** you scroll yourself.
+* **Auto:** LinkVault scrolls for you.
+
+Both modes can put your LinkedIn account at risk. Slow scrolling and delays do not make it safe.
+
+Safe choice: use **file import**. It does not touch LinkedIn. It only reads a file you saved.
+
+LinkVault is not made by or linked to LinkedIn in any way. Read the [risk help](extension/README.md#choose-a-collection-method) first.
+
+## Which browsers work?
+
+* **Chrome / Chromium:** works. This is the main target.
+* **Edge, Brave, Opera:** should work, but not fully tested.
+* **Firefox, Safari, phones:** not supported. Firefox needs extra work.
+
+You need Chrome or Chromium version 123 or newer.
+
+## Quick start
+
+1. Load the `extension` folder as an unpacked extension in Developer mode.
+2. Open a LinkedIn chat.
+3. Click the LinkVault icon.
+4. Go to **Collect** to save links, or **Reading list** to read them.
+
+Full steps are in the [extension guide](extension/README.md).
+
+## Backup and move
+
+* **Markdown:** saves what you see now, grouped by topic. Good for reading and notes. Not a full backup.
+* **JSON:** saves everything (chats, links, states, settings). Use this to back up or move to a new browser.
+
+Delete all links needs you to type `DELETE` first. It keeps your chats and settings, but removes the saved links. Back up first, there is no Undo for this.
+
+## Old Python tool (optional)
+
+The extension above is enough for most people. Skip this part unless you like the command line.
+
+The first version of LinkVault was a Python script. It reads a saved chat HTML file, finds links, fixes short `lnkd.in` links, gets titles, groups by topic, and writes Markdown.
+
+It needs Python 3.10 or newer. It uses only Python built in tools, no extra installs.
 
 ```
 chat thread (browser, logged in)
@@ -40,54 +92,62 @@ chat thread (browser, logged in)
   -> out/collection.md + vault-notes/<topic>.md + link-collection-moc.md
 ```
 
-Key trick: `lnkd.in` links serve a guard page. The real URL lives in the anchor with `data-tracking-control-name="external_url_click"`. LinkVault parses that, no login needed for resolution.
+How `lnkd.in` links work: LinkedIn shows a guard page first. The real link is in the tag with `data-tracking-control-name="external_url_click"`. LinkVault reads it. No login needed for this step.
 
-## Install
+### Install
 
 ```bash
 pip install -e .
 linkvault full --help
 ```
 
-No install needed too:
+Or run with no install:
 
 ```bash
 PYTHONPATH=src python -m linkvault.cli full linkedin-chat.html --out out
 ```
 
-## Capture the HTML
+### Save the HTML
 
 See `browser/README.md`. Short version:
 
-1. Open the thread, scroll up (PageUp) until history is loaded. Or paste `browser/scroll-loader.js` in DevTools Console for auto scroll.
+1. Open the chat, scroll up (PageUp) until old messages load. Or paste `browser/scroll-loader.js` in DevTools Console to auto scroll.
 2. Paste `browser/save-html.js` to download `linkedin-chat.html`.
 
-## Run
+### Run
 
 ```bash
 linkvault full linkedin-chat.html --out out --obsidian vault-notes
 ```
 
-Output:
+What you get:
 
-- `out/collection.md`: all links grouped by topic.
-- `vault-notes/`: one file per topic (`db.md`, `system-design.md`, ...) in Obsidian Full Note format plus `link-collection-moc.md` index.
+* `out/collection.md`: all links, grouped by topic.
+* `vault-notes/`: one file per topic (`db.md`, `system-design.md`, ...) plus `link-collection-moc.md` index.
 
-Tune workers on slow networks:
+If your net is slow, use fewer workers:
 
 ```bash
 linkvault full chat.html --out out --workers 10 --timeout 20
 ```
 
-## Topics
+### Topics
 
-Default labels: `dsa-interview`, `system-design`, `db`, `os-linux`, `network`, `docker-k8s-devops`, `backend`, `frontend-js`, `python`, `java`, `go`, `ai-ml`, `security`, `career-jobs`, `courses`, `videos`, `github-repos`, `articles`, `linkedin-posts`, `misc-useful`. Edit `src/linkvault/categorize.py` to add keywords.
+Default groups: `dsa-interview`, `system-design`, `db`, `os-linux`, `network`, `docker-k8s-devops`, `backend`, `frontend-js`, `python`, `java`, `go`, `ai-ml`, `security`, `career-jobs`, `courses`, `videos`, `github-repos`, `articles`, `linkedin-posts`, `misc-useful`. Edit `src/linkvault/categorize.py` to add your own words.
+
+This Python part does not fully support WhatsApp or Telegram. It can read plain HTML, but that is not the same as full support.
 
 ## Tests
 
 ```bash
 PYTHONPATH=src python -m pytest -q
 ```
+
+For the extension, run `npm test` inside the `extension` folder. See the [release checklist](docs/RELEASING.md) before you share a new version.
+
+## Brand
+
+Logo, colors, and launch image are in the [identity guide](brand/IDENTITY.md) and [launch art](brand/launch-card.png).
 
 ## License
 
